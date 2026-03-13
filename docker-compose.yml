@@ -1,0 +1,12 @@
+services:
+  selah-ia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: selah-ia
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-3010}:3010"
+    restart: unless-stopped
+
