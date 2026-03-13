@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.0.1-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20Developer%20API-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -22,12 +22,12 @@ Plataforma interna de IA para os seus SaaS, com `PraiseApp` como primeiro produt
 
 ## 🧩 Funcionalidades resumidas
 
-### 🆕 Destaques da versão 1.0.0
+### 🆕 Destaques da versão 1.0.1
 - **Provider Gemini Developer API** integrado com saída estruturada em JSON e parser endurecido para respostas truncadas.
 - **Adapter PraiseApp/Kids** entregue de ponta a ponta com geração assistida de conteúdo ministerial.
 - **Proteção interna por API key + source app** para impedir consumo direto fora dos seus backends.
 - **Observabilidade de requisições** com tracing básico e logs de negócio do fluxo Kids.
-- **Execução local e containerização** prontas com `Dockerfile`, `.dockerignore` e `docker-compose.yml`.
+- **Execução oficial sem Docker**, com foco no deploy direto em serviços como Railway.
 
 ### 🧠 1) Core da plataforma
 - Geração de texto e JSON estruturado com validação pós-provider.
@@ -104,18 +104,6 @@ npm start
 curl http://localhost:3010/health
 ```
 
-## 🐳 Docker
-
-Suba com:
-
-```bash
-docker compose up --build
-```
-
-O serviço sobe em:
-
-- `http://localhost:3010`
-
 ## ✅ Verificação rápida
 
 ```bash
@@ -170,7 +158,7 @@ src/
 
 ## 📌 Documentação complementar
 
-- 📝 Release notes 1.0.0: `docs/releases/v1.0.0.md`
+- 📝 Release notes 1.0.1: `docs/releases/v1.0.1.md`
 
 ## Observações
 
