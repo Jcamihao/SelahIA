@@ -1,0 +1,21 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1200" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#134E4A"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#22C55E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="320" rx="24" fill="url(#g1)"/>
+  <circle cx="1058" cy="68" r="110" fill="#ffffff" fill-opacity="0.06"/>
+  <circle cx="118" cy="282" r="88" fill="#ffffff" fill-opacity="0.07"/>
+  <rect x="52" y="54" width="420" height="42" rx="10" fill="#ffffff" fill-opacity="0.08"/>
+  <text x="70" y="82" fill="#E5E7EB" font-family="Arial, sans-serif" font-size="24" font-weight="700">Selah IA</text>
+  <text x="52" y="150" fill="#F9FAFB" font-family="Arial, sans-serif" font-size="48" font-weight="700">Plataforma Interna de IA para seus SaaS</text>
+  <text x="52" y="196" fill="#D1D5DB" font-family="Arial, sans-serif" font-size="24">Core reutilizável, adapters por produto e provider Gemini Developer API</text>
+  <rect x="52" y="224" width="300" height="52" rx="14" fill="url(#g2)"/>
+  <text x="86" y="258" fill="#1F2937" font-family="Arial, sans-serif" font-size="24" font-weight="700">Versão 1.0.0</text>
+</svg>
