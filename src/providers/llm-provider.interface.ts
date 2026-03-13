@@ -7,6 +7,7 @@ export type GenerationBaseInput = {
   temperature?: number;
   topP?: number;
   maxOutputTokens?: number;
+  thinkingBudget?: number;
 };
 
 export type GenerateTextInput = GenerationBaseInput;
@@ -35,4 +36,3 @@ export interface LlmProvider {
     input: StructuredGenerationInput<T>,
   ): Promise<StructuredGenerationResult<T>>;
 }
-

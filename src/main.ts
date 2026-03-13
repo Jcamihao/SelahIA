@@ -1,9 +1,18 @@
-import 'dotenv/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+async function loadEnvironment() {
+  try {
+    const dotenv = await import('dotenv');
+    dotenv.config();
+  } catch {
+    // `.env` is optional when the runtime already injects environment variables.
+  }
+}
+
 async function bootstrap() {
+  await loadEnvironment();
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: true,

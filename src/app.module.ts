@@ -1,10 +1,22 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { PraiseAppModule } from './adapters/praiseapp/praiseapp.module';
 import { HealthModule } from './health/health.module';
 import { ProvidersModule } from './providers/providers.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
+import { LoggingModule } from './common/logging/logging.module';
+import { RequestLoggingMiddleware } from './common/logging/request-logging.middleware';
 
 @Module({
-  imports: [HealthModule, ProvidersModule, CapabilitiesModule, PraiseAppModule],
+  imports: [
+    LoggingModule,
+    HealthModule,
+    ProvidersModule,
+    CapabilitiesModule,
+    PraiseAppModule,
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestLoggingMiddleware).forRoutes('*');
+  }
+}
