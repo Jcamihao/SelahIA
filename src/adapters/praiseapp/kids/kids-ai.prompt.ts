@@ -4,6 +4,8 @@ import { GeneratePraiseAppKidsNextSequenceDto } from './dto/generate-praiseapp-k
 import { GeneratePraiseAppKidsWeeklyVerseExpansionDto } from './dto/generate-praiseapp-kids-weekly-verse-expansion.dto';
 import { GeneratePraiseAppKidsOperationalAssistantDto } from './dto/generate-praiseapp-kids-operational-assistant.dto';
 import { GeneratePraiseAppKidsAgeAdaptationsDto } from './dto/generate-praiseapp-kids-age-adaptations.dto';
+import { GeneratePraiseAppKidsPostClassCommunicationDto } from './dto/generate-praiseapp-kids-post-class-communication.dto';
+import { GeneratePraiseAppKidsEventSuggestionDto } from './dto/generate-praiseapp-kids-event-suggestion.dto';
 
 const listBlock = (title: string, items?: string[]) => {
   const normalizedItems = (items || []).map((item) => String(item || '').trim()).filter(Boolean);
@@ -305,5 +307,79 @@ Regras de geração:
 - Ajuste complexidade verbal e atividade física conforme a idade.
 - Traga diferenças reais entre as faixas, não apenas texto reescrito.
 - Cada versão deve ajudar um professor a entender como conduzir aquela faixa específica.
+  `.trim();
+};
+
+export const buildPraiseAppKidsPostClassCommunicationPrompt = (
+  input: GeneratePraiseAppKidsPostClassCommunicationDto,
+) => {
+  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const additionalContext = String(input.additionalContext || '').trim();
+
+  return `
+Contexto do produto:
+- Produto consumidor: PraiseApp
+- Módulo: Kids
+- Idioma alvo: ${locale}
+
+${lessonBlock('Aula salva que servirá de base', input.lessonPlan)}
+
+Versículo ativo para reforço da semana:
+- Referência: ${String(input.activeWeeklyVerseReference || '').trim() || 'não informado'}
+- Texto/resumo: ${String(input.activeWeeklyVerseText || '').trim() || 'não informado'}
+
+Objetivo:
+- Gerar uma comunicação pós-aula pronta para a equipe do Kids usar com pais e responsáveis.
+
+Regras de geração:
+- "suggestedNoticeTitle" deve soar como um título natural para um aviso ou card da comunicação.
+- "parentMessage" deve vir pronta para WhatsApp, em um único bloco de texto, acolhedor e objetivo.
+- "lessonSummary" deve explicar em linguagem simples o que a criança aprendeu.
+- "weeklyChallenge" deve ser prático, curto e viável em casa.
+- "verseReinforcement" deve ser uma frase curta de reforço do versículo para repetição com a criança.
+- Não invente detalhes que não estejam implicados no conteúdo da aula.
+- Se a aula base estiver incompleta, faça suposições conservadoras e seguras.
+
+Observações adicionais:
+${additionalContext || 'nenhuma observação adicional.'}
+  `.trim();
+};
+
+export const buildPraiseAppKidsEventSuggestionPrompt = (
+  input: GeneratePraiseAppKidsEventSuggestionDto,
+) => {
+  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const purpose = String(input.purpose || '').trim();
+  const locationContext = String(input.locationContext || '').trim();
+  const additionalContext = String(input.additionalContext || '').trim();
+
+  return `
+Contexto do produto:
+- Produto consumidor: PraiseApp
+- Módulo: Kids
+- Idioma alvo: ${locale}
+
+Briefing do evento:
+- Tema central: ${String(input.theme || '').trim()}
+- Data do evento: ${String(input.eventDate || '').trim()}
+- Público principal: ${String(input.targetAudience || '').trim()}
+- Objetivo do evento: ${purpose || 'não informado'}
+- Contexto de local/estrutura: ${locationContext || 'não informado'}
+
+Objetivo:
+- Sugerir um evento infantil com nome, descrição, checklist, programação base e comunicação para pais.
+
+Regras de geração:
+- "suggestedTitle" deve ser um nome claro e atrativo para o evento.
+- "suggestedNoticeTitle" deve funcionar como título de comunicação para os pais.
+- "description" deve ser útil para salvar no cadastro do evento.
+- "checklist" deve trazer preparações práticas da equipe.
+- "programFlow" deve trazer uma ordem base do evento, de forma realista.
+- "parentCommunication" deve vir pronta para WhatsApp, em um único bloco.
+- "locationSuggestion" deve ajudar o líder a escolher ou nomear o melhor espaço possível.
+- Não invente custos, links ou detalhes muito específicos que não foram dados.
+
+Observações adicionais:
+${additionalContext || 'nenhuma observação adicional.'}
   `.trim();
 };

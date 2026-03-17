@@ -6,6 +6,8 @@ import { GeneratePraiseAppKidsNextSequenceDto } from './dto/generate-praiseapp-k
 import { GeneratePraiseAppKidsWeeklyVerseExpansionDto } from './dto/generate-praiseapp-kids-weekly-verse-expansion.dto';
 import { GeneratePraiseAppKidsOperationalAssistantDto } from './dto/generate-praiseapp-kids-operational-assistant.dto';
 import { GeneratePraiseAppKidsAgeAdaptationsDto } from './dto/generate-praiseapp-kids-age-adaptations.dto';
+import { GeneratePraiseAppKidsPostClassCommunicationDto } from './dto/generate-praiseapp-kids-post-class-communication.dto';
+import { GeneratePraiseAppKidsEventSuggestionDto } from './dto/generate-praiseapp-kids-event-suggestion.dto';
 import { KidsAiService } from './kids-ai.service';
 
 @UseGuards(InternalApiKeyGuard)
@@ -79,6 +81,30 @@ export class KidsAiController {
     const response = await this.kidsAiService.generateAgeAdaptations(dto);
     return {
       message: 'Adaptação por faixas etárias gerada com Selah IA.',
+      response,
+    };
+  }
+
+  @Post('lesson-plan/post-class-communication')
+  @HttpCode(200)
+  async generatePostClassCommunication(
+    @Body() dto: GeneratePraiseAppKidsPostClassCommunicationDto,
+  ) {
+    const response = await this.kidsAiService.generatePostClassCommunication(dto);
+    return {
+      message: 'Comunicação pós-aula gerada com Selah IA.',
+      response,
+    };
+  }
+
+  @Post('events/suggest')
+  @HttpCode(200)
+  async generateEventSuggestion(
+    @Body() dto: GeneratePraiseAppKidsEventSuggestionDto,
+  ) {
+    const response = await this.kidsAiService.generateEventSuggestion(dto);
+    return {
+      message: 'Sugestão de evento gerada com Selah IA.',
       response,
     };
   }

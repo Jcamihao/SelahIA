@@ -4,29 +4,37 @@ import { GeneratePraiseAppKidsLessonPlanDto } from './dto/generate-praiseapp-kid
 import {
   buildPraiseAppKidsAgeAdaptationsPrompt,
   buildPraiseAppKidsCheckinDailySummaryPrompt,
+  buildPraiseAppKidsEventSuggestionPrompt,
   buildPraiseAppKidsLessonPlanPrompt,
   buildPraiseAppKidsNextSequencePrompt,
   buildPraiseAppKidsOperationalAssistantPrompt,
+  buildPraiseAppKidsPostClassCommunicationPrompt,
   buildPraiseAppKidsWeeklyVerseExpansionPrompt,
 } from './kids-ai.prompt';
 import {
   PRAISEAPP_KIDS_AGE_ADAPTATIONS_SCHEMA,
   PRAISEAPP_KIDS_CHECKIN_DAILY_SUMMARY_SCHEMA,
+  PRAISEAPP_KIDS_EVENT_SUGGESTION_SCHEMA,
   PRAISEAPP_KIDS_LESSON_PLAN_SCHEMA,
   PRAISEAPP_KIDS_NEXT_SEQUENCE_SCHEMA,
   PRAISEAPP_KIDS_OPERATIONAL_ASSISTANT_SCHEMA,
+  PRAISEAPP_KIDS_POST_CLASS_COMMUNICATION_SCHEMA,
   PRAISEAPP_KIDS_WEEKLY_VERSE_EXPANSION_SCHEMA,
   PraiseAppKidsAgeAdaptations,
   PraiseAppKidsCheckinDailySummary,
+  PraiseAppKidsEventSuggestion,
   PraiseAppKidsLessonPlanSuggestion,
   PraiseAppKidsOperationalAssistant,
   PraiseAppKidsPedagogicalSequence,
+  PraiseAppKidsPostClassCommunication,
   PraiseAppKidsWeeklyVerseExpansion,
   validatePraiseAppKidsAgeAdaptations,
   validatePraiseAppKidsCheckinDailySummary,
+  validatePraiseAppKidsEventSuggestion,
   validatePraiseAppKidsLessonPlanSuggestion,
   validatePraiseAppKidsOperationalAssistant,
   validatePraiseAppKidsPedagogicalSequence,
+  validatePraiseAppKidsPostClassCommunication,
   validatePraiseAppKidsWeeklyVerseExpansion,
 } from './kids-ai.schemas';
 import { RequestContextService } from '../../../common/logging/request-context.service';
@@ -35,6 +43,8 @@ import { GeneratePraiseAppKidsNextSequenceDto } from './dto/generate-praiseapp-k
 import { GeneratePraiseAppKidsWeeklyVerseExpansionDto } from './dto/generate-praiseapp-kids-weekly-verse-expansion.dto';
 import { GeneratePraiseAppKidsOperationalAssistantDto } from './dto/generate-praiseapp-kids-operational-assistant.dto';
 import { GeneratePraiseAppKidsAgeAdaptationsDto } from './dto/generate-praiseapp-kids-age-adaptations.dto';
+import { GeneratePraiseAppKidsPostClassCommunicationDto } from './dto/generate-praiseapp-kids-post-class-communication.dto';
+import { GeneratePraiseAppKidsEventSuggestionDto } from './dto/generate-praiseapp-kids-event-suggestion.dto';
 
 @Injectable()
 export class KidsAiService {
@@ -267,6 +277,79 @@ export class KidsAiService {
     return {
       ...this.responseMeta(result.model),
       adaptations: result.data,
+    };
+  }
+
+  async generatePostClassCommunication(
+    input: GeneratePraiseAppKidsPostClassCommunicationDto,
+  ): Promise<{
+    provider: string;
+    version: string;
+    model: string;
+    generatedAt: string;
+    communication: PraiseAppKidsPostClassCommunication;
+  }> {
+    const requestId = this.requestContext.getRequestId();
+    const lessonPlan = input.lessonPlan || {};
+    this.logger.log(
+      `[${requestId}] Kids post-class communication started title="${String((lessonPlan as Record<string, unknown>)?.suggestedTitle || (lessonPlan as Record<string, unknown>)?.nomeAula || '').trim()}" reference="${String((lessonPlan as Record<string, unknown>)?.biblicalReference || (lessonPlan as Record<string, unknown>)?.textoBase || '').trim()}"`,
+    );
+
+    const result = await this.structuredOutputService.generate({
+      userPrompt: buildPraiseAppKidsPostClassCommunicationPrompt(input),
+      systemInstruction:
+        'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco acolhedor, pedagógico e seguro para equipes de igreja.',
+      responseSchema: PRAISEAPP_KIDS_POST_CLASS_COMMUNICATION_SCHEMA,
+      validate: validatePraiseAppKidsPostClassCommunication,
+      temperature: 0.35,
+      topP: 0.9,
+      maxOutputTokens: 1100,
+      thinkingBudget: 0,
+    });
+
+    this.logger.log(
+      `[${requestId}] Kids post-class communication completed noticeTitle="${result.data.suggestedNoticeTitle}"`,
+    );
+
+    return {
+      ...this.responseMeta(result.model),
+      communication: result.data,
+    };
+  }
+
+  async generateEventSuggestion(
+    input: GeneratePraiseAppKidsEventSuggestionDto,
+  ): Promise<{
+    provider: string;
+    version: string;
+    model: string;
+    generatedAt: string;
+    event: PraiseAppKidsEventSuggestion;
+  }> {
+    const requestId = this.requestContext.getRequestId();
+    this.logger.log(
+      `[${requestId}] Kids event suggestion started theme="${String(input.theme || '').trim()}" date="${String(input.eventDate || '').trim()}" audience="${String(input.targetAudience || '').trim()}"`,
+    );
+
+    const result = await this.structuredOutputService.generate({
+      userPrompt: buildPraiseAppKidsEventSuggestionPrompt(input),
+      systemInstruction:
+        'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional, acolhedor e seguro para ministério infantil.',
+      responseSchema: PRAISEAPP_KIDS_EVENT_SUGGESTION_SCHEMA,
+      validate: validatePraiseAppKidsEventSuggestion,
+      temperature: 0.45,
+      topP: 0.92,
+      maxOutputTokens: 1400,
+      thinkingBudget: 0,
+    });
+
+    this.logger.log(
+      `[${requestId}] Kids event suggestion completed title="${result.data.suggestedTitle}" checklist=${result.data.checklist.length} flow=${result.data.programFlow.length}`,
+    );
+
+    return {
+      ...this.responseMeta(result.model),
+      event: result.data,
     };
   }
 }

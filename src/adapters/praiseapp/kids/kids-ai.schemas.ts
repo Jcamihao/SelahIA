@@ -214,6 +214,24 @@ export type PraiseAppKidsAgeAdaptations = {
   versions: PraiseAppKidsAgeAdaptationVersion[];
 };
 
+export type PraiseAppKidsPostClassCommunication = {
+  suggestedNoticeTitle: string;
+  parentMessage: string;
+  lessonSummary: string;
+  weeklyChallenge: string;
+  verseReinforcement: string;
+};
+
+export type PraiseAppKidsEventSuggestion = {
+  suggestedTitle: string;
+  suggestedNoticeTitle: string;
+  description: string;
+  checklist: string[];
+  parentCommunication: string;
+  programFlow: string[];
+  locationSuggestion: string;
+};
+
 export const validatePraiseAppKidsLessonPlanSuggestion = (
   input: unknown,
 ): PraiseAppKidsLessonPlanSuggestion => {
@@ -463,5 +481,81 @@ export const validatePraiseAppKidsAgeAdaptations = (
   return {
     baseReference: readRequiredString(payload, 'baseReference', 180),
     versions,
+  };
+};
+
+export const PRAISEAPP_KIDS_POST_CLASS_COMMUNICATION_SCHEMA = {
+  type: 'object',
+  properties: {
+    suggestedNoticeTitle: { type: 'string' },
+    parentMessage: { type: 'string' },
+    lessonSummary: { type: 'string' },
+    weeklyChallenge: { type: 'string' },
+    verseReinforcement: { type: 'string' },
+  },
+  required: [
+    'suggestedNoticeTitle',
+    'parentMessage',
+    'lessonSummary',
+    'weeklyChallenge',
+    'verseReinforcement',
+  ],
+};
+
+export const validatePraiseAppKidsPostClassCommunication = (
+  input: unknown,
+): PraiseAppKidsPostClassCommunication => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Resposta da IA inválida para comunicação pós-aula do Kids.');
+  }
+
+  const payload = input as Record<string, unknown>;
+  return {
+    suggestedNoticeTitle: readRequiredString(payload, 'suggestedNoticeTitle', 180),
+    parentMessage: readRequiredString(payload, 'parentMessage', 1200),
+    lessonSummary: readRequiredString(payload, 'lessonSummary', 900),
+    weeklyChallenge: readRequiredString(payload, 'weeklyChallenge', 500),
+    verseReinforcement: readRequiredString(payload, 'verseReinforcement', 320),
+  };
+};
+
+export const PRAISEAPP_KIDS_EVENT_SUGGESTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    suggestedTitle: { type: 'string' },
+    suggestedNoticeTitle: { type: 'string' },
+    description: { type: 'string' },
+    checklist: { type: 'array', items: { type: 'string' } },
+    parentCommunication: { type: 'string' },
+    programFlow: { type: 'array', items: { type: 'string' } },
+    locationSuggestion: { type: 'string' },
+  },
+  required: [
+    'suggestedTitle',
+    'suggestedNoticeTitle',
+    'description',
+    'checklist',
+    'parentCommunication',
+    'programFlow',
+    'locationSuggestion',
+  ],
+};
+
+export const validatePraiseAppKidsEventSuggestion = (
+  input: unknown,
+): PraiseAppKidsEventSuggestion => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('Resposta da IA inválida para sugestão de evento do Kids.');
+  }
+
+  const payload = input as Record<string, unknown>;
+  return {
+    suggestedTitle: readRequiredString(payload, 'suggestedTitle', 180),
+    suggestedNoticeTitle: readRequiredString(payload, 'suggestedNoticeTitle', 180),
+    description: readRequiredString(payload, 'description', 1400),
+    checklist: readStringArray(payload, 'checklist', 8, 220),
+    parentCommunication: readRequiredString(payload, 'parentCommunication', 1400),
+    programFlow: readStringArray(payload, 'programFlow', 8, 240),
+    locationSuggestion: readRequiredString(payload, 'locationSuggestion', 180),
   };
 };
