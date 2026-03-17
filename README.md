@@ -5,29 +5,32 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.1-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.1.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20Developer%20API-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
 </p>
 
-Plataforma interna de IA para os seus SaaS, com `PraiseApp` como primeiro produto consumidor e `Kids` como primeiro adapter operacional.
+# 🤖 Selah IA 1.1.0: Expansão Ministerial
+A versão 1.1.0 expande os domínios atendidos pelo PraiseApp com novos adaptadores especializados:
+
+- **Adapter Consolidação:** Análise de sentimento (positivo/negativo) e geração de playbooks de acompanhamento pastoral de 4 semanas.
+- **Adapter Louvor:** Curadoria musical com restrição estrita ao repertório fornecido e geração de dinâmicas de ensaio.
+- **Análise de Saúde da Igreja:** Indicadores de engajamento baseados em rastro histórico de presença e visitantes.
+- **Multi-tenancy Refined:** Isolamento de contexto organizacional garantido em cada prompt gerado.
 
 ## ✨ Visão rápida
 
 - 🧠 **Core reutilizável:** providers, capabilities e adapters desacoplados.
 - 🔐 **Segurança entre serviços:** autenticação interna com `X-Selah-Api-Key`.
 - 🧩 **Adaptação por domínio:** prompts e contratos específicos por SaaS.
-- 📈 **Observabilidade:** logs com `requestId`, `sourceApp`, duração e telemetria básica do provider.
 
 ## 🧩 Funcionalidades resumidas
 
-### 🆕 Destaques da versão 1.0.1
-- **Provider Gemini Developer API** integrado com saída estruturada em JSON e parser endurecido para respostas truncadas.
-- **Adapter PraiseApp/Kids** entregue de ponta a ponta com geração assistida de conteúdo ministerial.
-- **Proteção interna por API key + source app** para impedir consumo direto fora dos seus backends.
-- **Observabilidade de requisições** com tracing básico e logs de negócio do fluxo Kids.
-- **Execução oficial sem Docker**, com foco no deploy direto em serviços como Railway.
+### 🆕 Destaques da versão 1.1.0
+- **Novos adaptadores para Louvor e Consolidação** integrados ao PraiseApp.
+- **Lógica de "Repertório Fechado"** que impede sugestões de músicas não cadastradas.
+- **Cálculo de Score de Saúde** da igreja via IA.
 
 ### 🧠 1) Core da plataforma
 - Geração de texto e JSON estruturado com validação pós-provider.
