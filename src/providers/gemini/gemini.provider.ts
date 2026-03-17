@@ -16,9 +16,7 @@ import { RequestContextService } from '../../common/logging/request-context.serv
 
 type GeminiCandidate = {
   content?: {
-    parts?: Array<{
-      text?: string;
-    }>;
+    parts?: Array<Record<string, unknown>>;
   };
   finishReason?: string;
 };
@@ -109,6 +107,58 @@ export class GeminiProvider implements LlmProvider {
       thinkingBudget,
       maxOutputTokens: input.maxOutputTokens,
     });
+
+    const text = this.extractText(response);
+    const parsed = this.parseJson(text, response);
+    return {
+      data: input.validate(parsed),
+      text,
+      model,
+      raw: response,
+    };
+  }
+
+  async generateStructuredFromContents<T>(input: {
+    model?: string;
+    systemInstruction?: string;
+    contents: Array<Record<string, unknown>>;
+    responseSchema: Record<string, unknown>;
+    validate: (payload: unknown) => T;
+    temperature?: number;
+    topP?: number;
+    maxOutputTokens?: number;
+    thinkingBudget?: number;
+    promptChars?: number;
+  }): Promise<StructuredGenerationResult<T>> {
+    const model = this.resolveModel(input.model);
+    const thinkingBudget =
+      input.thinkingBudget !== undefined
+        ? input.thinkingBudget
+        : this.structuredThinkingBudget;
+    const response = await this.request(
+      model,
+      {
+        system_instruction: this.toSystemInstruction(input.systemInstruction),
+        contents: input.contents,
+        generationConfig: {
+          ...this.toGenerationConfig({
+            userPrompt: '',
+            temperature: input.temperature,
+            topP: input.topP,
+            maxOutputTokens: input.maxOutputTokens,
+            thinkingBudget,
+          }),
+          responseMimeType: 'application/json',
+          responseJsonSchema: input.responseSchema,
+        },
+      },
+      {
+        mode: 'structured',
+        promptChars: Number(input.promptChars || 0),
+        thinkingBudget,
+        maxOutputTokens: input.maxOutputTokens,
+      },
+    );
 
     const text = this.extractText(response);
     const parsed = this.parseJson(text, response);
