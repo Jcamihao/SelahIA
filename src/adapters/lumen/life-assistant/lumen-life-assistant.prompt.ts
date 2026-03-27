@@ -12,8 +12,24 @@ const listBlock = (title: string, items?: string[]) => {
   return `${title}:\n- ${normalizedItems.join('\n- ')}`;
 };
 
+const inlineList = (items?: string[]) => {
+  const normalizedItems = (items || [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+
+  if (!normalizedItems.length) {
+    return 'nenhum item concreto informado';
+  }
+
+  return normalizedItems.join('; ');
+};
+
 export const buildLumenLifeAssistantPrompt = (
   input: GenerateLumenLifeAssistantResponseDto,
+  options?: {
+    tightenSpecificity?: boolean;
+    retryFeedback?: string;
+  },
 ) => {
   const openTasks = (input.openTasks || []).map((task) => {
     const due = task.dueDateLabel ? `vence ${task.dueDateLabel}` : 'sem prazo informado';
@@ -44,6 +60,22 @@ export const buildLumenLifeAssistantPrompt = (
     (insight) =>
       `${insight.severity} | ${insight.type} | ${insight.message}`,
   );
+
+  const preferredAnchors = [
+    ...(input.openTasks || []).slice(0, 3).map((task) => `Tarefa: ${task.title}`),
+    ...(input.recentTransactions || [])
+      .slice(0, 2)
+      .map(
+        (transaction) =>
+          `Movimentação: ${transaction.description} (${transaction.type}, ${transaction.amount.toFixed(2)})`,
+      ),
+    ...(input.activeGoals || [])
+      .slice(0, 2)
+      .map((goal) => `Meta: ${goal.title} (${goal.progressPercent}%)`),
+    ...(input.activeInsights || [])
+      .slice(0, 2)
+      .map((insight) => `Insight: ${insight.message}`),
+  ];
 
   return `
 Contexto do produto:
@@ -88,6 +120,9 @@ ${listBlock('Lembretes próximos', input.reminderLabels)}
 
 ${listBlock('Notificações abertas', input.notificationLabels)}
 
+Âncoras concretas que devem ser preferidas na redação:
+- ${inlineList(preferredAnchors)}
+
 Regras obrigatórias:
 - Responda somente com base no contexto recebido do LUMEN.
 - Nunca use conhecimento externo, memória própria ou inferência solta para inventar fatos.
@@ -110,9 +145,28 @@ Regras obrigatórias:
 - Se intent for "finance_overview", o answer deve mencionar saldo atual, movimentação do mês e risco da previsão.
 - Se não houver alerta crítico, você pode destacar isso explicitamente em highlights.
 - Se faltarem highlights fortes, use um highlight conservador baseado em ausência de risco, progresso de meta ou disciplina atual, sem inventar fatos.
+- Quando houver tarefas, metas, transações ou insights nomeados, cite pelo menos 2 referências concretas pelo nome exato no conjunto answer + highlights + suggestedActions.
+- Quando houver valores monetários relevantes, use pelo menos 1 valor exato no answer ou em highlights.
+- Quando houver uma tarefa prioritária nomeada, a primeira suggestedAction deve citar essa tarefa pelo nome exato.
+- Se existirem 2 ou mais itens acionáveis nomeados, pelo menos 2 suggestedActions devem citar esses alvos pelo nome.
+- Evite abstrações como "uma tarefa", "uma meta", "um gasto" ou "algumas pendências" quando os nomes concretos estiverem disponíveis.
+- Evite frases vagas como "mantenha o ritmo", "siga acompanhando", "proteja o caixa" e "avance com cautela" sem ligar a orientação a um item nomeado.
+- Prefira verbos operacionais e específicos: fechar, renegociar, revisar, concluir, antecipar, registrar, reforçar, aportar.
+- Não repita o mesmo conselho em palavras diferentes.
 - O padrão desejado do card é:
   1. Um resumo curto do estado atual.
   2. Highlights curtos e objetivos.
   3. Próximas ações em tom de orientação prática.
+${options?.tightenSpecificity ? `
+
+Correção obrigatória de especificidade:
+- A versão anterior ficou genérica demais para o padrão do LUMEN.
+- Refaça usando nomes exatos, valores exatos e sinais concretos do contexto.
+- Se houver 3 ou mais itens nomeados disponíveis, use pelo menos 2 deles explicitamente.
+- Não devolva conselhos genéricos sem alvo definido.` : ''}
+${options?.retryFeedback ? `
+
+Feedback objetivo para a nova tentativa:
+${String(options.retryFeedback).trim()}` : ''}
   `.trim();
 };
