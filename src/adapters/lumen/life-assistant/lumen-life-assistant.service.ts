@@ -23,6 +23,10 @@ export class LumenLifeAssistantService {
     'olhe para o panorama',
     'mantenha a disciplina',
     'reforce uma meta',
+    'hoje voce tem',
+    'seu saldo atual esta',
+    'a previsao atual',
+    'visao geral do dia',
   ];
 
   constructor(
@@ -109,8 +113,14 @@ export class LumenLifeAssistantService {
     ].join(' '));
     const actionText = this.toSearchableText(response.suggestedActions.join(' '));
     const namedAnchors = this.collectNamedAnchors(input);
+    const explicitQuestionTargets = (input.matchedQuestionTargets || []).filter(
+      Boolean,
+    );
     const anchorMatches = namedAnchors.filter((anchor) =>
       combined.includes(this.toSearchableText(anchor)),
+    ).length;
+    const explicitQuestionTargetMatches = explicitQuestionTargets.filter(
+      (target) => combined.includes(this.toSearchableText(target)),
     ).length;
     const genericPhraseMatches = this.genericPhrases.filter((phrase) =>
       combined.includes(this.toSearchableText(phrase)),
@@ -131,6 +141,13 @@ export class LumenLifeAssistantService {
     }
 
     if (
+      explicitQuestionTargets.length > 0 &&
+      explicitQuestionTargetMatches === 0
+    ) {
+      return true;
+    }
+
+    if (
       (input.intent === 'priorities' || (input.openTasks || []).length > 0) &&
       actionableAnchors.length > 0 &&
       namedActionMatches === 0
@@ -147,6 +164,15 @@ export class LumenLifeAssistantService {
       ((input.recentTransactions || []).length > 0 ||
         Number(input.currentBalance || 0) !== 0) &&
       !hasMonetarySignal
+    ) {
+      return true;
+    }
+
+    if (
+      input.intent === 'general' &&
+      explicitQuestionTargets.length > 0 &&
+      genericPhraseMatches > 0 &&
+      explicitQuestionTargetMatches < 1
     ) {
       return true;
     }
@@ -191,6 +217,9 @@ export class LumenLifeAssistantService {
       missingAnchors.length
         ? `Itens concretos disponíveis para citar: ${missingAnchors.join('; ')}.`
         : 'Use os itens concretos disponíveis no contexto detalhado.',
+      (input.matchedQuestionTargets || []).length
+        ? `Itens citados explicitamente pelo usuário: ${input.matchedQuestionTargets?.join('; ')}.`
+        : 'Responda o foco real da pergunta do usuário antes de ampliar para panorama.',
       candidateValues.length
         ? `Valores concretos disponíveis: ${candidateValues.join('; ')}.`
         : 'Se houver valor financeiro relevante, cite o número exato.',

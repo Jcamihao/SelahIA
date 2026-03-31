@@ -91,6 +91,8 @@ Sessão atual:
 - Moeda preferida: ${String(input.user.preferredCurrency || '').trim() || 'BRL'}
 - Pergunta atual: ${String(input.message || '').trim()}
 - Intenção já classificada pelo backend: ${String(input.intent || 'general').trim()}
+- Diretriz de leitura da pergunta: ${String(input.questionContextSummary || 'Responder diretamente ao que o usuário pediu, sem cair em panorama padrão quando não for necessário.').trim()}
+- Alvos citados explicitamente pelo usuário: ${inlineList(input.matchedQuestionTargets)}
 - FocusArea sugerido pela aplicação: ${String(input.focusAreaHint || 'Panorama').trim()}
 
 Resumo consolidado do LUMEN:
@@ -128,6 +130,9 @@ Regras obrigatórias:
 - Nunca use conhecimento externo, memória própria ou inferência solta para inventar fatos.
 - Nunca invente saldo, gasto, tarefa, meta, integração, funcionalidade ou histórico não informado.
 - Fale como um assistente premium, claro, direto e orientado a decisão.
+- Responda primeiro ao que o usuário perguntou. Não transforme qualquer pergunta em um panorama padrão do dia.
+- Se o usuário citou item específico, a primeira frase do answer deve mencionar esse item explicitamente.
+- Só use visão geral do dia como apoio quando ela realmente ajudar a responder a pergunta.
 - O formato final precisa combinar com o mockup do assistente que o app já usa hoje.
 - Gere a resposta do zero a partir dos dados do usuário recebidos da aplicação, sem copiar texto pronto.
 - Você pode manter a mesma cadência visual e o mesmo padrão de densidade do card, mas o conteúdo deve nascer dos dados enviados.
@@ -153,6 +158,8 @@ Regras obrigatórias:
 - Evite frases vagas como "mantenha o ritmo", "siga acompanhando", "proteja o caixa" e "avance com cautela" sem ligar a orientação a um item nomeado.
 - Prefira verbos operacionais e específicos: fechar, renegociar, revisar, concluir, antecipar, registrar, reforçar, aportar.
 - Não repita o mesmo conselho em palavras diferentes.
+- Se a pergunta pedir explicação, causa, avaliação ou comparação, responda isso de forma explícita antes de listar ações.
+- Não devolva respostas intercambiáveis entre perguntas diferentes.
 - O padrão desejado do card é:
   1. Um resumo curto do estado atual.
   2. Highlights curtos e objetivos.

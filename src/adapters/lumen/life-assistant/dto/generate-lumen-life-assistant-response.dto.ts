@@ -142,6 +142,18 @@ export class GenerateLumenLifeAssistantResponseDto {
   @MaxLength(9000)
   applicationPromptContext: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  questionContextSummary?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  @MaxLength(160, { each: true })
+  matchedQuestionTargets?: string[];
+
   @IsString()
   @MaxLength(60)
   focusAreaHint: string;

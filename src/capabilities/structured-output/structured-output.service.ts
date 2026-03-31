@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   LlmProvider,
+  StructuredGenerationFromContentsInput,
   StructuredGenerationInput,
   StructuredGenerationResult,
 } from '../../providers/llm-provider.interface';
@@ -17,5 +18,10 @@ export class StructuredOutputService {
   ): Promise<StructuredGenerationResult<T>> {
     return this.provider.generateStructured(input);
   }
-}
 
+  generateFromContents<T>(
+    input: StructuredGenerationFromContentsInput<T>,
+  ): Promise<StructuredGenerationResult<T>> {
+    return this.provider.generateStructuredFromContents(input);
+  }
+}

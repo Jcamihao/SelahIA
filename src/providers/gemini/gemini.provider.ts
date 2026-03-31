@@ -118,6 +118,50 @@ export class GeminiProvider implements LlmProvider {
     };
   }
 
+  async generateTextFromContents(input: {
+    model?: string;
+    systemInstruction?: string;
+    contents: Array<Record<string, unknown>>;
+    temperature?: number;
+    topP?: number;
+    maxOutputTokens?: number;
+    thinkingBudget?: number;
+    promptChars?: number;
+  }): Promise<GenerateTextResult> {
+    const model = this.resolveModel(input.model);
+    const thinkingBudget =
+      input.thinkingBudget !== undefined
+        ? input.thinkingBudget
+        : this.structuredThinkingBudget;
+    const response = await this.request(
+      model,
+      {
+        system_instruction: this.toSystemInstruction(input.systemInstruction),
+        contents: input.contents,
+        generationConfig: this.toGenerationConfig({
+          userPrompt: '',
+          temperature: input.temperature,
+          topP: input.topP,
+          maxOutputTokens: input.maxOutputTokens,
+          thinkingBudget,
+        }),
+      },
+      {
+        mode: 'text',
+        promptChars: Number(input.promptChars || 0),
+        thinkingBudget,
+        maxOutputTokens: input.maxOutputTokens,
+      },
+    );
+
+    const text = this.extractText(response);
+    return {
+      text,
+      model,
+      raw: response,
+    };
+  }
+
   async generateStructuredFromContents<T>(input: {
     model?: string;
     systemInstruction?: string;
