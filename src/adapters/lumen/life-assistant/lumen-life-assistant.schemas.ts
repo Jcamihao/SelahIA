@@ -1,5 +1,7 @@
 export type LumenLifeAssistantConfidence = 'low' | 'medium' | 'high';
 
+const LUMEN_LIFE_ASSISTANT_MAX_ITEMS = 6;
+
 export interface LumenLifeAssistantResponse {
   answer: string;
   highlights: string[];
@@ -25,13 +27,13 @@ export const LUMEN_LIFE_ASSISTANT_SCHEMA = {
       type: 'array',
       items: { type: 'string' },
       minItems: 1,
-      maxItems: 4,
+      maxItems: LUMEN_LIFE_ASSISTANT_MAX_ITEMS,
     },
     suggestedActions: {
       type: 'array',
       items: { type: 'string' },
       minItems: 1,
-      maxItems: 4,
+      maxItems: LUMEN_LIFE_ASSISTANT_MAX_ITEMS,
     },
     focusArea: { type: 'string' },
     confidence: {
@@ -97,10 +99,10 @@ export function validateLumenLifeAssistantResponse(
     answer: String(p.answer).trim(),
     highlights: (p.highlights as unknown[])
       .filter((item): item is string => typeof item === 'string' && !!item.trim())
-      .slice(0, 4),
+      .slice(0, LUMEN_LIFE_ASSISTANT_MAX_ITEMS),
     suggestedActions: (p.suggestedActions as unknown[])
       .filter((item): item is string => typeof item === 'string' && !!item.trim())
-      .slice(0, 4),
+      .slice(0, LUMEN_LIFE_ASSISTANT_MAX_ITEMS),
     focusArea: String(p.focusArea).trim(),
     confidence: p.confidence as LumenLifeAssistantConfidence,
     disclaimer:

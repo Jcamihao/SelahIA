@@ -1,5 +1,17 @@
 import { GenerateLumenLifeAssistantResponseDto } from './dto/generate-lumen-life-assistant-response.dto';
 
+const FINANCIAL_GUIDANCE_PATTERN =
+  /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest|orcament|or[çc]amento|gasto|despesa|econom|renda|sal[aá]rio|boleto|conta|reserva|caixa)\b/i;
+
+const DEBT_GUIDANCE_PATTERN =
+  /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest)\b/i;
+
+const PERSONAL_GUIDANCE_PATTERN =
+  /\b(rotina|vida pessoal|cansa[cç]|ansied|foco|procrast|disciplina|h[aá]bito|organiza|emocional|energia|sono|estresse|estres|travad|desanim|produtividade|const[aâ]ncia)\b/i;
+
+const MONEY_SIGNAL_PATTERN =
+  /(?:r\$\s*)?\d{1,3}(?:\.\d{3})*(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?|(?:r\$\s*)?\d+(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?/gi;
+
 const listBlock = (title: string, items?: string[]) => {
   const normalizedItems = (items || [])
     .map((item) => String(item || '').trim())
@@ -24,13 +36,142 @@ const inlineList = (items?: string[]) => {
   return normalizedItems.join('; ');
 };
 
+const extractQuestionFacts = (message: string) => {
+  const normalizedMessage = String(message || '').trim();
+
+  if (!normalizedMessage) {
+    return [];
+  }
+
+  const facts = new Set<string>();
+  const moneySignals = normalizedMessage.match(MONEY_SIGNAL_PATTERN) || [];
+
+  for (const signal of moneySignals) {
+    const cleaned = signal.replace(/\s+/g, ' ').trim();
+
+    if (cleaned) {
+      facts.add(cleaned);
+    }
+  }
+
+  if (DEBT_GUIDANCE_PATTERN.test(normalizedMessage)) {
+    facts.add('pedido de ajuda para quitar ou reorganizar dívida');
+  }
+
+  if (FINANCIAL_GUIDANCE_PATTERN.test(normalizedMessage)) {
+    facts.add('pedido de orientação financeira prática');
+  }
+
+  if (PERSONAL_GUIDANCE_PATTERN.test(normalizedMessage)) {
+    facts.add('pedido de orientação para vida pessoal ou rotina');
+  }
+
+  return Array.from(facts).slice(0, 5);
+};
+
+const classifyQuestion = (
+  input: GenerateLumenLifeAssistantResponseDto,
+  questionFacts: string[],
+) => {
+  const message = String(input.message || '').trim();
+  const normalizedMessage = message.toLowerCase();
+  const isDebtQuestion = DEBT_GUIDANCE_PATTERN.test(message);
+  const isFinancialGuidance =
+    isDebtQuestion ||
+    input.intent === 'finance_overview' ||
+    FINANCIAL_GUIDANCE_PATTERN.test(message);
+  const isPersonalGuidance =
+    PERSONAL_GUIDANCE_PATTERN.test(message) &&
+    input.intent === 'general';
+
+  if (isDebtQuestion) {
+    return {
+      label: 'quitação de dívida / reorganização financeira',
+      rules: [
+        'Trate a pergunta como um problema concreto de reorganização financeira, não como visão geral.',
+        'Cite o valor explicitamente informado pelo usuário quando ele existir, por exemplo uma dívida de 15 mil.',
+        'Explique como quitar sem comprometer moradia, alimentação, transporte, saúde ou trabalho.',
+        'Oriente a ordem prática: mapear credores, entender juros e atraso, definir parcela realista, negociar primeiro a dívida mais cara ou mais urgente.',
+      ],
+      requiredFacts:
+        questionFacts.length > 0
+          ? `Fatos do próprio texto do usuário que precisam aparecer: ${questionFacts.join('; ')}.`
+          : 'Se o usuário trouxe valor, tipo de dívida ou urgência, isso precisa aparecer explicitamente.',
+    };
+  }
+
+  if (isFinancialGuidance) {
+    return {
+      label: 'orientação financeira prática',
+      rules: [
+        'Responda como um estrategista financeiro pessoal, com diagnóstico curto e plano viável.',
+        'Conecte a pergunta com saldo, despesas, previsão, risco e hábitos financeiros quando esses dados existirem.',
+        'Prefira conselhos concretos sobre corte, negociação, priorização, reserva e fluxo de caixa.',
+      ],
+      requiredFacts:
+        questionFacts.length > 0
+          ? `Use os fatos explícitos da pergunta: ${questionFacts.join('; ')}.`
+          : 'Se a pergunta trouxer valor ou meta financeira explícita, cite esse número.',
+    };
+  }
+
+  if (isPersonalGuidance) {
+    return {
+      label: 'organização de vida pessoal / rotina',
+      rules: [
+        'Responda como um orientador de vida prática: acolhedor, mas objetivo.',
+        'Conecte rotina, energia, foco, tarefas, metas e dinheiro quando isso ajudar.',
+        'Evite frases motivacionais vazias; entregue um ajuste de comportamento que caiba no dia real do usuário.',
+      ],
+      requiredFacts:
+        questionFacts.length > 0
+          ? `Considere os fatos explícitos da pergunta: ${questionFacts.join('; ')}.`
+          : 'Se a pergunta não trouxer fatos concretos, use os sinais da rotina e do contexto estruturado do app.',
+    };
+  }
+
+  if (
+    normalizedMessage.includes('como') ||
+    normalizedMessage.includes('devo') ||
+    normalizedMessage.includes('vale a pena') ||
+    normalizedMessage.includes('faz sentido')
+  ) {
+    return {
+      label: 'orientação prática / decisão',
+      rules: [
+        'Comece pela decisão principal que o usuário precisa tomar.',
+        'Explique o porquê em linguagem curta e direta, antes de listar ações.',
+      ],
+      requiredFacts:
+        questionFacts.length > 0
+          ? `Use os fatos explícitos da pergunta: ${questionFacts.join('; ')}.`
+          : 'Se houver alvos citados na pergunta, responda primeiro sobre eles.',
+    };
+  }
+
+  return {
+    label: 'leitura geral contextual',
+    rules: [
+      'Responda primeiro ao pedido do usuário e só use panorama como apoio.',
+      'Mantenha o texto concreto, humano e orientado a decisão.',
+    ],
+    requiredFacts:
+      questionFacts.length > 0
+        ? `A pergunta trouxe fatos explícitos: ${questionFacts.join('; ')}.`
+        : 'Não há fatos explícitos novos além do contexto estruturado do app.',
+  };
+};
+
 export const buildLumenLifeAssistantPrompt = (
   input: GenerateLumenLifeAssistantResponseDto,
   options?: {
     tightenSpecificity?: boolean;
+    forceQuestionLedPlan?: boolean;
     retryFeedback?: string;
   },
 ) => {
+  const questionFacts = extractQuestionFacts(input.message);
+  const questionProfile = classifyQuestion(input, questionFacts);
   const openTasks = (input.openTasks || []).map((task) => {
     const due = task.dueDateLabel ? `vence ${task.dueDateLabel}` : 'sem prazo informado';
     const category = task.category ? `categoria ${task.category}` : 'sem categoria';
@@ -62,6 +203,10 @@ export const buildLumenLifeAssistantPrompt = (
   );
 
   const preferredAnchors = [
+    ...questionFacts.map((fact) => `Pergunta: ${fact}`),
+    ...(input.matchedQuestionTargets || [])
+      .slice(0, 3)
+      .map((target) => `Alvo citado: ${target}`),
     ...(input.openTasks || []).slice(0, 3).map((task) => `Tarefa: ${task.title}`),
     ...(input.recentTransactions || [])
       .slice(0, 2)
@@ -93,6 +238,8 @@ Sessão atual:
 - Intenção já classificada pelo backend: ${String(input.intent || 'general').trim()}
 - Diretriz de leitura da pergunta: ${String(input.questionContextSummary || 'Responder diretamente ao que o usuário pediu, sem cair em panorama padrão quando não for necessário.').trim()}
 - Alvos citados explicitamente pelo usuário: ${inlineList(input.matchedQuestionTargets)}
+- Leitura especializada da pergunta: ${questionProfile.label}
+- Fatos explícitos trazidos pelo próprio usuário: ${inlineList(questionFacts)}
 - FocusArea sugerido pela aplicação: ${String(input.focusAreaHint || 'Panorama').trim()}
 
 Resumo consolidado do LUMEN:
@@ -127,9 +274,11 @@ ${listBlock('Notificações abertas', input.notificationLabels)}
 
 Regras obrigatórias:
 - Responda somente com base no contexto recebido do LUMEN.
+- A própria pergunta do usuário faz parte do contexto confiável. Se ele afirmou um valor, problema, meta ou situação, você pode e deve citar isso como fato explícito da conversa.
 - Nunca use conhecimento externo, memória própria ou inferência solta para inventar fatos.
 - Nunca invente saldo, gasto, tarefa, meta, integração, funcionalidade ou histórico não informado.
 - Fale como um assistente premium, claro, direto e orientado a decisão.
+- Fale como um assistente que ajuda a melhorar vida financeira e vida pessoal de forma prática, sem coaching vazio.
 - Responda primeiro ao que o usuário perguntou. Não transforme qualquer pergunta em um panorama padrão do dia.
 - Se o usuário citou item específico, a primeira frase do answer deve mencionar esse item explicitamente.
 - Só use visão geral do dia como apoio quando ela realmente ajudar a responder a pergunta.
@@ -138,10 +287,13 @@ Regras obrigatórias:
 - Você pode manter a mesma cadência visual e o mesmo padrão de densidade do card, mas o conteúdo deve nascer dos dados enviados.
 - Se a pergunta for sobre prioridades, conecte urgência, prazo, impacto financeiro e desbloqueio do dia.
 - Se a pergunta for sobre finanças, conecte saldo atual, despesas, previsão e nível de risco.
+- Se a pergunta pedir ajuda para quitar dívida, renegociar, sair do aperto ou reorganizar a vida financeira, entregue um mini-plano viável: proteger o básico, mapear juros/parcelas, definir ritmo de pagamento e negociar a dívida mais cara ou mais urgente primeiro.
+- Quando o usuário perguntar "sem ferrar minha vida", preserve explicitamente moradia, alimentação, transporte, saúde e trabalho como linha de base da recomendação.
+- Se a pergunta for de vida pessoal, rotina, foco, cansaço ou disciplina, conecte comportamento, energia, tarefas e metas em um plano pequeno e executável.
 - Se a pergunta for ampla, sintetize o estado do dia em linguagem humana e prática.
-- answer deve ter 1 frase ou 2 frases curtas, sem markdown, no mesmo estilo do card do mockup.
-- highlights deve trazer de 1 a 4 pontos curtos, em uma linha cada, como no card do mockup.
-- suggestedActions deve trazer de 2 a 4 próximos passos objetivos e acionáveis, em tom imperativo curto.
+- answer deve ter 3 ou 4 frases conectadas, ou 2 blocos curtos quando a pergunta pedir orientação, plano, avaliação ou saída prática; em perguntas muito objetivas, pode ter 2 ou 3 frases. Nunca entregue resposta telegráfica ou rasa demais.
+- highlights deve trazer de 2 a 6 pontos curtos, em uma linha cada, priorizando leitura concreta e contexto útil.
+- suggestedActions deve trazer de 3 a 6 próximos passos objetivos e acionáveis, em tom imperativo curto.
 - focusArea deve resumir o foco principal da resposta em até 3 palavras e, por padrão, seguir o focusArea sugerido pela aplicação quando fizer sentido.
 - confidence deve ser low, medium ou high conforme a suficiência do contexto.
 - disclaimer deve ser null quando o contexto for suficiente; use texto curto apenas quando houver limitação importante.
@@ -156,21 +308,35 @@ Regras obrigatórias:
 - Se existirem 2 ou mais itens acionáveis nomeados, pelo menos 2 suggestedActions devem citar esses alvos pelo nome.
 - Evite abstrações como "uma tarefa", "uma meta", "um gasto" ou "algumas pendências" quando os nomes concretos estiverem disponíveis.
 - Evite frases vagas como "mantenha o ritmo", "siga acompanhando", "proteja o caixa" e "avance com cautela" sem ligar a orientação a um item nomeado.
+- Evite respostas que serviriam igual para qualquer pergunta. Cada card precisa soar feito para este caso.
 - Prefira verbos operacionais e específicos: fechar, renegociar, revisar, concluir, antecipar, registrar, reforçar, aportar.
 - Não repita o mesmo conselho em palavras diferentes.
 - Se a pergunta pedir explicação, causa, avaliação ou comparação, responda isso de forma explícita antes de listar ações.
 - Não devolva respostas intercambiáveis entre perguntas diferentes.
+- Regras extras desta pergunta:
+- ${questionProfile.rules.join('\n- ')}
+- ${questionProfile.requiredFacts}
 - O padrão desejado do card é:
-  1. Um resumo curto do estado atual.
-  2. Highlights curtos e objetivos.
-  3. Próximas ações em tom de orientação prática.
+  1. Uma resposta direta ao problema do usuário.
+  2. Um contexto curto explicando o porquê ou o risco principal.
+  3. Highlights curtos e objetivos.
+  4. Próximas ações em tom de orientação prática.
 ${options?.tightenSpecificity ? `
 
 Correção obrigatória de especificidade:
 - A versão anterior ficou genérica demais para o padrão do LUMEN.
 - Refaça usando nomes exatos, valores exatos e sinais concretos do contexto.
 - Se houver 3 ou mais itens nomeados disponíveis, use pelo menos 2 deles explicitamente.
-- Não devolva conselhos genéricos sem alvo definido.` : ''}
+- Não devolva conselhos genéricos sem alvo definido.
+- Se a pergunta trouxer um problema concreto, entregue uma leitura e um plano, não só um comentário.
+- Aumente o detalhamento útil sem perder objetividade.` : ''}
+${options?.forceQuestionLedPlan ? `
+
+Correção obrigatória de aderência à pergunta:
+- A pergunta exige resposta centrada no problema do usuário.
+- A primeira frase do answer deve dizer o que fazer ou qual lógica seguir diante do problema descrito.
+- Não abra com panorama do app.
+- Se houver dívida, dificuldade financeira, desorganização da rotina ou travamento pessoal, o card precisa soar como orientação aplicada ao caso, não como resumo institucional.` : ''}
 ${options?.retryFeedback ? `
 
 Feedback objetivo para a nova tentativa:
