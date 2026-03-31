@@ -40,8 +40,8 @@ export class GeminiProvider implements LlmProvider {
     .replace(/\/+$/, '');
   private readonly apiKey = String(process.env.GEMINI_API_KEY || '').trim();
   private readonly timeoutMs = Math.max(
-    5000,
-    Number(process.env.GEMINI_TIMEOUT_MS || 20000),
+    10000,
+    Number(process.env.GEMINI_TIMEOUT_MS || 45000),
   );
   private readonly structuredThinkingBudget = Number(
     process.env.GEMINI_STRUCTURED_THINKING_BUDGET ?? 0,
