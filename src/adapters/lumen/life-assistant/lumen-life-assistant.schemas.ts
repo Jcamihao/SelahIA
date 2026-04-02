@@ -9,6 +9,10 @@ export interface LumenLifeAssistantResponse {
   focusArea: string;
   confidence: LumenLifeAssistantConfidence;
   disclaimer: string | null;
+  reasoning?: string[];
+  evidence?: string[];
+  confidenceReason?: string | null;
+  followUpPrompt?: string | null;
 }
 
 export const LUMEN_LIFE_ASSISTANT_SCHEMA = {
@@ -41,6 +45,22 @@ export const LUMEN_LIFE_ASSISTANT_SCHEMA = {
       enum: ['low', 'medium', 'high'],
     },
     disclaimer: {
+      type: ['string', 'null'],
+    },
+    reasoning: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 4,
+    },
+    evidence: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 5,
+    },
+    confidenceReason: {
+      type: ['string', 'null'],
+    },
+    followUpPrompt: {
       type: ['string', 'null'],
     },
   },
@@ -109,5 +129,23 @@ export function validateLumenLifeAssistantResponse(
       p.disclaimer === null || p.disclaimer === undefined
         ? null
         : String(p.disclaimer).trim(),
+    reasoning: Array.isArray(p.reasoning)
+      ? (p.reasoning as unknown[])
+          .filter((item): item is string => typeof item === 'string' && !!item.trim())
+          .slice(0, 4)
+      : [],
+    evidence: Array.isArray(p.evidence)
+      ? (p.evidence as unknown[])
+          .filter((item): item is string => typeof item === 'string' && !!item.trim())
+          .slice(0, 5)
+      : [],
+    confidenceReason:
+      p.confidenceReason === null || p.confidenceReason === undefined
+        ? null
+        : String(p.confidenceReason).trim(),
+    followUpPrompt:
+      p.followUpPrompt === null || p.followUpPrompt === undefined
+        ? null
+        : String(p.followUpPrompt).trim(),
   };
 }

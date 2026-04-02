@@ -181,6 +181,14 @@ export class LumenReceiptParserService {
       qrCodeText: stronger.qrCodeText || weaker.qrCodeText,
       notes: Array.from(new Set([...stronger.notes, ...weaker.notes])).slice(0, 6),
       rawTextExcerpt: stronger.rawTextExcerpt || weaker.rawTextExcerpt,
+      purchaseSummary: stronger.purchaseSummary || weaker.purchaseSummary,
+      purchaseMission: stronger.purchaseMission || weaker.purchaseMission,
+      spendingSignals: Array.from(
+        new Set([...(stronger.spendingSignals || []), ...(weaker.spendingSignals || [])]),
+      ).slice(0, 5),
+      followUpActions: Array.from(
+        new Set([...(stronger.followUpActions || []), ...(weaker.followUpActions || [])]),
+      ).slice(0, 5),
       items: stronger.items.length ? stronger.items : weaker.items,
     };
   }
@@ -193,6 +201,8 @@ export class LumenReceiptParserService {
       (data.accessKey ? 2 : 0) +
       (data.qrCodeDetected ? 1 : 0) +
       Math.min(data.items.length, 8) * 2 +
+      (data.purchaseSummary ? 1 : 0) +
+      Math.min((data.spendingSignals || []).length, 3) +
       this.scoreConfidence(data.confidence)
     );
   }

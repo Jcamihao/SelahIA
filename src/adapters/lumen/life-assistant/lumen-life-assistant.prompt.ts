@@ -234,6 +234,7 @@ Sessão atual:
 - Usuário: ${String(input.user.name || '').trim() || 'Usuário'}
 - Data percebida: ${String(input.currentDateLabel || '').trim() || 'não informada'}
 - Moeda preferida: ${String(input.user.preferredCurrency || '').trim() || 'BRL'}
+- Módulo de origem: ${String(input.originModule || 'general').trim()}
 - Pergunta atual: ${String(input.message || '').trim()}
 - Intenção já classificada pelo backend: ${String(input.intent || 'general').trim()}
 - Diretriz de leitura da pergunta: ${String(input.questionContextSummary || 'Responder diretamente ao que o usuário pediu, sem cair em panorama padrão quando não for necessário.').trim()}
@@ -241,6 +242,7 @@ Sessão atual:
 - Leitura especializada da pergunta: ${questionProfile.label}
 - Fatos explícitos trazidos pelo próprio usuário: ${inlineList(questionFacts)}
 - FocusArea sugerido pela aplicação: ${String(input.focusAreaHint || 'Panorama').trim()}
+- Memória curta de conversas recentes: ${String(input.conversationMemory || 'nenhum contexto anterior enviado').trim()}
 
 Resumo consolidado do LUMEN:
 ${String(input.lifeContextSummary || '').trim()}
@@ -297,9 +299,15 @@ Regras obrigatórias:
 - focusArea deve resumir o foco principal da resposta em até 3 palavras e, por padrão, seguir o focusArea sugerido pela aplicação quando fizer sentido.
 - confidence deve ser low, medium ou high conforme a suficiência do contexto.
 - disclaimer deve ser null quando o contexto for suficiente; use texto curto apenas quando houver limitação importante.
+- reasoning deve trazer de 2 a 4 frases curtas explicando a lógica da recomendação.
+- evidence deve listar de 2 a 5 fatos concretos do contexto usados na leitura.
+- confidenceReason deve explicar em uma frase curta por que a confiança ficou nesse nível.
+- followUpPrompt deve sugerir a próxima pergunta natural para continuidade da conversa, em tom curto e útil.
 - Se intent for "today_overview", o answer deve mencionar tarefas do dia, atrasos, alertas críticos e previsão financeira.
 - Se intent for "priorities", o answer deve dizer o que vem primeiro agora e por quê.
 - Se intent for "finance_overview", o answer deve mencionar saldo atual, movimentação do mês e risco da previsão.
+- Quando houver conversationMemory, preserve continuidade: não repita a conversa inteira, mas use esse histórico para sugerir um próximo passo coerente.
+- Quando originModule for diferente de general, tente deixar a resposta ligeiramente mais aderente ao módulo que trouxe a pergunta.
 - Se não houver alerta crítico, você pode destacar isso explicitamente em highlights.
 - Se faltarem highlights fortes, use um highlight conservador baseado em ausência de risco, progresso de meta ou disciplina atual, sem inventar fatos.
 - Quando houver tarefas, metas, transações ou insights nomeados, cite pelo menos 2 referências concretas pelo nome exato no conjunto answer + highlights + suggestedActions.

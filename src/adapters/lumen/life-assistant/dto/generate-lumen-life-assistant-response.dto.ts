@@ -145,6 +145,17 @@ export class GenerateLumenLifeAssistantResponseDto {
   @IsOptional()
   @IsString()
   @MaxLength(2000)
+  conversationMemory?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  @IsIn(['dashboard', 'tasks', 'finances', 'goals', 'imports', 'general'])
+  originModule?: 'dashboard' | 'tasks' | 'finances' | 'goals' | 'imports' | 'general';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
   questionContextSummary?: string;
 
   @IsOptional()

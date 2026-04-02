@@ -24,6 +24,10 @@ export interface LumenReceiptParseResponse {
   qrCodeText: string | null;
   notes: string[];
   rawTextExcerpt: string | null;
+  purchaseSummary: string | null;
+  purchaseMission: string | null;
+  spendingSignals: string[];
+  followUpActions: string[];
   items: LumenReceiptLineItem[];
 }
 
@@ -95,6 +99,22 @@ export const LUMEN_RECEIPT_PARSE_SCHEMA = {
     },
     rawText: {
       type: ['string', 'null'],
+    },
+    purchaseSummary: {
+      type: ['string', 'null'],
+    },
+    purchaseMission: {
+      type: ['string', 'null'],
+    },
+    spendingSignals: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 5,
+    },
+    followUpActions: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 5,
     },
     items: {
       type: 'array',
@@ -170,6 +190,20 @@ export function validateLumenReceiptParseResponse(
       p.rawText === null || p.rawText === undefined
         ? null
         : String(p.rawText).trim() || null,
+    purchaseSummary:
+      p.purchaseSummary === null || p.purchaseSummary === undefined
+        ? null
+        : String(p.purchaseSummary).trim() || null,
+    purchaseMission:
+      p.purchaseMission === null || p.purchaseMission === undefined
+        ? null
+        : String(p.purchaseMission).trim() || null,
+    spendingSignals: (Array.isArray(p.spendingSignals) ? p.spendingSignals : [])
+      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .slice(0, 5),
+    followUpActions: (Array.isArray(p.followUpActions) ? p.followUpActions : [])
+      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .slice(0, 5),
     items: items
       .map((item) => item as Record<string, unknown>)
       .filter((item) => typeof item.name === 'string' && !!String(item.name).trim())

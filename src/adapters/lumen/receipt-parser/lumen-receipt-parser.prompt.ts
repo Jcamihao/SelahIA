@@ -30,6 +30,10 @@ const outputShape = `{
   "qrCodeText": string | null,
   "notes": string[],
   "rawText": string | null,
+  "purchaseSummary": string | null,
+  "purchaseMission": string | null,
+  "spendingSignals": string[],
+  "followUpActions": string[],
   "items": [
     {
       "name": string,
@@ -76,6 +80,10 @@ Objetivo da resposta:
 - Identificar sinais tipicos de documentos brasileiros como DANFE NFC-e, SAT, CF-e, NFe, CNPJ e QR Code.
 - Se houver QR Code ou URL fiscal visivel, extrair o texto legivel em qrCodeText e marcar qrCodeDetected=true.
 - Se houver chave de acesso visivel, extrair os 44 digitos em accessKey.
+- Montar uma leitura curta da compra em purchaseSummary, explicando o que parece ser a cesta.
+- Se der para inferir a intenção principal da compra, devolver em purchaseMission algo como reposicao da casa, compra rapida, farmacia, mercado do mes, conveniencia ou null.
+- spendingSignals deve listar ate 5 sinais financeiros concretos da compra, por exemplo concentracao em limpeza, gasto pulverizado, ticket alto, compra essencial ou itens sem categoria clara.
+- followUpActions deve listar ate 5 proximos passos curtos e uteis para o usuario dentro do LUMEN, como revisar categoria, checar duplicidade ou observar ticket medio.
 - Gerar JSON estritamente no schema solicitado.
 
 Formato de saida esperado:
@@ -94,6 +102,8 @@ Regras obrigatorias:
 - confidence deve refletir a qualidade geral da leitura da nota.
 - notes deve listar ambiguidades importantes, divergencia entre soma dos itens e total, ou campos ausentes relevantes.
 - rawTextExcerpt deve trazer um trecho curto do texto reconhecido, sem markdown, quando isso ajudar na auditoria.
+- purchaseSummary deve ser curto, claro e fiel ao que aparece na compra, sem inventar contexto externo.
+- spendingSignals e followUpActions devem ser pragmáticos e úteis para controle financeiro, nunca genéricos demais.
 - Foque em notas fiscais e cupons brasileiros, inclusive supermercados, farmacias e lojas.
 - Ignore publicidade, rodapes irrelevantes e textos nao ligados a compra.
 - merchantTaxId deve trazer CNPJ ou CPF do emitente quando visivel.
