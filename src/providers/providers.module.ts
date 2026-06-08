@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
-import { GeminiProvider } from './gemini/gemini.provider';
+import { OllamaProvider } from './ollama/ollama.provider';
 import { LLM_PROVIDER_TOKEN } from './provider.tokens';
 
 @Module({
   providers: [
-    GeminiProvider,
+    OllamaProvider,
     {
       provide: LLM_PROVIDER_TOKEN,
-      useExisting: GeminiProvider,
+      useExisting: OllamaProvider,
     },
   ],
-  exports: [GeminiProvider, LLM_PROVIDER_TOKEN],
+  exports: [OllamaProvider, LLM_PROVIDER_TOKEN],
 })
 export class ProvidersModule {}
 

@@ -51,4 +51,14 @@ export interface LlmProvider {
   generateStructuredFromContents<T>(
     input: StructuredGenerationFromContentsInput<T>,
   ): Promise<StructuredGenerationResult<T>>;
+  generateTextFromContents(input: {
+    model?: string;
+    systemInstruction?: string;
+    contents: Array<Record<string, unknown>>;
+    temperature?: number;
+    topP?: number;
+    maxOutputTokens?: number;
+    thinkingBudget?: number;
+    promptChars?: number;
+  }): Promise<GenerateTextResult>;
 }
