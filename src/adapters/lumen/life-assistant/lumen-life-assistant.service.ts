@@ -67,7 +67,7 @@ export class LumenLifeAssistantService {
     private readonly requestContext: RequestContextService,
   ) {}
 
-  private responseMeta(model: string, provider = 'gemini-developer-api') {
+  private responseMeta(model: string, provider = 'ollama') {
     return {
       provider,
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',

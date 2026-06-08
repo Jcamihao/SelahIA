@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelahCoder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0c0c;
+      --sb:        #0f0f0f;
+      --surface:   #161616;
+      --surface2:  #1e1e1e;
+      --border:    #1e1e1e;
+      --border2:   #2a2a2a;
+      --text:      #e2e2e2;
+      --text2:     #999;
+      --muted:     #555;
+      --accent:    #a78bfa;
+      --green:     #4ade80;
+      --blue:      #60a5fa;
+      --red:       #f87171;
+      --yellow:    #fbbf24;
+      --mono:      'JetBrains Mono','Cascadia Code','Fira Code',monospace;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+      font-size: 14px;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════ */
+    .sidebar {
+      width: 224px;
+      flex-shrink: 0;
+      background: var(--sb);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sb-header {
+      padding: 14px 14px 10px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sb-project-info { min-width: 0; flex: 1; }
+
+    .sb-project-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sb-project-path {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sb-dots {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .sb-dots:hover { color: var(--text); background: var(--surface2); }
+
+    .sb-new-btn {
+      margin: 8px 10px 4px;
+      padding: 7px 10px;
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: calc(100% - 20px);
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .sb-new-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    .sb-section-label {
+      padding: 10px 14px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .sb-sessions {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2px 0;
+    }
+
+    .sb-sessions::-webkit-scrollbar { width: 3px; }
+    .sb-sessions::-webkit-scrollbar-track { background: transparent; }
+    .sb-sessions::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .session-item {
+      padding: 7px 14px;
+      font-size: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 2px solid transparent;
+      transition: background 0.1s;
+    }
+    .session-item:hover { background: var(--surface); color: var(--text); }
+    .session-item.active { border-left-color: var(--accent); background: var(--surface); color: var(--text); }
+
+    .session-empty {
+      padding: 12px 14px;
+      font-size: 11px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .sb-footer {
+      border-top: 1px solid var(--border);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .sb-config-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sb-config-label {
+      font-size: 10px;
+      color: var(--muted);
+      width: 28px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .sb-config-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 11px;
+      font-family: var(--mono);
+      outline: none;
+      min-width: 0;
+    }
+    .sb-config-input:focus { border-color: var(--accent); color: var(--text); }
+
+    .sb-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 2px 0;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+    .status-dot.running { background: var(--yellow); animation: pulse 1s ease-in-out infinite; }
+    .status-dot.error   { background: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    #statusText { font-size: 11px; color: var(--muted); }
+
+    /* ═══════════════════════════════
+       MAIN
+    ═══════════════════════════════ */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    /* Memory banner */
+    .memory-bar {
+      display: none;
+      background: var(--sb);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      flex-shrink: 0;
+    }
+
+    .memory-bar-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      padding: 7px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .memory-bar-btn:hover { opacity: 0.8; }
+
+    #memoryPanel {
+      display: none;
+      background: var(--sb);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      max-height: 200px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    #memoryPath {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-bottom: 6px;
+    }
+
+    #memoryContent {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text2);
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Log */
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 48px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #log::-webkit-scrollbar { width: 4px; }
+    #log::-webkit-scrollbar-track { background: transparent; }
+    #log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    /* Empty state */
+    #emptyHint {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding-bottom: 64px;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .empty-icon {
+      width: 36px;
+      height: 44px;
+      border: 1.5px solid var(--border2);
+      border-radius: 5px;
+      margin-bottom: 10px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .empty-icon::after {
+      content: '';
+      position: absolute;
+      top: 6px; left: 6px; right: 6px;
+      height: 2px;
+      background: var(--border2);
+      border-radius: 1px;
+      box-shadow: 0 5px 0 var(--border2), 0 10px 0 var(--border2);
+    }
+
+    .empty-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    .empty-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .empty-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ═══════════════════════════════
+       INPUT AREA
+    ═══════════════════════════════ */
+    .input-wrap {
+      padding: 10px 48px 18px;
+      flex-shrink: 0;
+    }
+
+    .input-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      transition: border-color 0.15s;
+    }
+    .input-box:focus-within { border-color: #3a3a3a; }
+
+    #taskInput {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 14px 16px 6px;
+      resize: none;
+      outline: none;
+      min-height: 50px;
+      max-height: 180px;
+      display: block;
+    }
+
+    #taskInput::placeholder { color: var(--muted); }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px 10px;
+      gap: 8px;
+    }
+
+    .input-badges {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text2);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .badge:hover { border-color: var(--accent); color: var(--text); }
+    .badge.mem-badge { color: var(--accent); border-color: #3d2f6a; }
+
+    .badge select {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: inherit;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      max-width: 160px;
+      padding: 0;
+    }
+    .badge select option { background: #1e1e1e; color: var(--text); }
+
+    .badge input[type="number"] {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: inherit;
+      font-family: inherit;
+      outline: none;
+      width: 28px;
+      text-align: center;
+      padding: 0;
+      -moz-appearance: textfield;
+    }
+    .badge input[type="number"]::-webkit-outer-spin-button,
+    .badge input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .send-btn {
+      width: 30px;
+      height: 30px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .send-btn:disabled { opacity: 0.35; cursor: default; }
+    .send-btn:not(:disabled):hover { opacity: 0.8; }
+
+    /* ═══════════════════════════════
+       DOTS ANIMATION
+    ═══════════════════════════════ */
+    .dots { display: flex; gap: 4px; align-items: center; }
+    .dots span {
+      width: 5px; height: 5px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0.7);opacity:.5} 40%{transform:scale(1);opacity:1} }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sb-header">
+    <div class="sb-project-info">
+      <div class="sb-project-name">SelahCoder</div>
+      <div class="sb-project-path" id="sidebarPath">~/</div>
+    </div>
+    <button class="sb-dots" title="Opções">···</button>
+  </div>
+
+  <button class="sb-new-btn" onclick="newSession()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    Nova sessão
+  </button>
+
+  <div class="sb-section-label">Recentes</div>
+  <div class="sb-sessions" id="sessionsList">
+    <div class="session-empty">Nenhuma sessão ainda</div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-config-row">
+      <span class="sb-config-label">DIR</span>
+      <input type="text" id="workdirInput" class="sb-config-input" placeholder="/home/user/project" />
+    </div>
+    <div class="sb-config-row">
+      <span class="sb-config-label">KEY</span>
+      <input type="password" id="apiKeyInput" class="sb-config-input" placeholder="x-selah-api-key" autocomplete="off" />
+    </div>
+    <div class="sb-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Pronto</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- Memory bar -->
+  <div class="memory-bar" id="memoryBar">
+    <button class="memory-bar-btn" onclick="toggleMemoryPanel()">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M2 2h8v1H2zM2 5.5h8v1H2zM2 9h5v1H2z"/>
+      </svg>
+      <span id="memoryBtnLabel">memory.md</span>
+      <span style="color:var(--muted);font-weight:400;">▾</span>
+    </button>
+  </div>
+
+  <!-- Memory panel -->
+  <div id="memoryPanel">
+    <div id="memoryPath"></div>
+    <pre id="memoryContent"></pre>
+  </div>
+
+  <!-- Log -->
+  <div id="log">
+    <div id="emptyHint">
+      <div class="empty-icon"></div>
+      <div class="empty-title">Crie qualquer coisa</div>
+      <div class="empty-sub">Descreva uma tarefa e pressione Enter</div>
+      <div class="empty-meta">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zm-2.25.75a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25z"/>
+        </svg>
+        Branch principal
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-wrap">
+    <div class="input-box">
+      <textarea id="taskInput" placeholder="Pergunte qualquer coisa... &quot;Crie um módulo de autenticação&quot;" rows="1"></textarea>
+      <div class="input-actions">
+        <div class="input-badges">
+          <label class="badge" title="Modelo">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0z"/>
+            </svg>
+            <select id="modelSelect" title="Modelo">
+              <option value="">Carregando...</option>
+            </select>
+          </label>
+          <label class="badge" title="Máximo de chamadas ao modelo por tarefa. Tarefas simples usam 3–5, tarefas complexas podem precisar de 15–20.">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm.75 4.75v3.69l2.28 2.28a.75.75 0 0 1-1.06 1.06l-2.5-2.5a.75.75 0 0 1-.22-.53v-4a.75.75 0 0 1 1.5 0z"/>
+            </svg>
+            <input type="number" id="maxIterInput" value="10" min="1" max="20" />
+            <span>passos max</span>
+          </label>
+          <button class="badge mem-badge" id="memoryBtn" onclick="toggleMemoryPanel()" style="display:none;">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8V1.5z"/>
+            </svg>
+            MEM
+          </button>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <button class="send-btn" id="decomposeBtn" onclick="runDecompose()" title="Decompor em subtarefas e executar (para tarefas grandes)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--accent);width:auto;padding:0 10px;font-size:11px;font-weight:600;letter-spacing:0.3px;border-radius:8px;">
+            Decompor
+          </button>
+          <button class="send-btn" id="runBtn" onclick="runTask()" title="Executar diretamente (Ctrl+Enter)">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8.75 1.25a.75.75 0 0 0-1.5 0v5.5h-5.5a.75.75 0 0 0 0 1.5h5.5v5.5a.75.75 0 0 0 1.5 0v-5.5h5.5a.75.75 0 0 0 0-1.5h-5.5v-5.5z" transform="rotate(45 8 8)"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const logEl  = document.getElementById('log');
+  const runBtn = document.getElementById('runBtn');
+  const dotEl  = document.getElementById('statusDot');
+  const textEl = document.getElementById('statusText');
+
+  let thinkingEl = null;
+
+  /* ── Persistence ─────────────────────────── */
+  const store = {
+    get: (k, d) => localStorage.getItem('sc:' + k) || d,
+    set: (k, v) => localStorage.setItem('sc:' + k, v),
+  };
+
+  document.getElementById('apiKeyInput').value  = store.get('apiKey', '');
+  document.getElementById('workdirInput').value = store.get('workdir', '/home/caminhao/codeStage');
+
+  document.getElementById('apiKeyInput').addEventListener('input',  function(e){ store.set('apiKey', e.target.value); updateSidebarPath(); });
+  document.getElementById('workdirInput').addEventListener('input', function(e){ store.set('workdir', e.target.value); updateSidebarPath(); });
+  document.getElementById('modelSelect').addEventListener('change', function(e){ store.set('model', e.target.value); });
+
+  document.getElementById('apiKeyInput').addEventListener('change', function() { loadModels(); loadMemory(); });
+  document.getElementById('workdirInput').addEventListener('change', function() { loadMemory(); updateSidebarPath(); });
+
+  function updateSidebarPath() {
+    var wd = document.getElementById('workdirInput').value.trim();
+    var pathEl = document.getElementById('sidebarPath');
+    if (!wd) { pathEl.textContent = '~/'; return; }
+    pathEl.textContent = wd.replace(/^\/home\/[^/]+/, '~');
+  }
+
+  updateSidebarPath();
+
+  /* ── Sessions (localStorage) ─────────────── */
+  function getSessions() {
+    try { return JSON.parse(localStorage.getItem('sc:sessions') || '[]'); } catch { return []; }
+  }
+
+  function saveSessions(arr) {
+    localStorage.setItem('sc:sessions', JSON.stringify(arr.slice(0, 20)));
+  }
+
+  function addSession(task) {
+    var sessions = getSessions();
+    sessions.unshift({ id: Date.now(), task: task, ts: new Date().toISOString() });
+    saveSessions(sessions);
+    renderSessions();
+  }
+
+  function renderSessions() {
+    var list = document.getElementById('sessionsList');
+    var sessions = getSessions();
+    if (!sessions.length) {
+      list.innerHTML = '<div class="session-empty">Nenhuma sessão ainda</div>';
+      return;
+    }
+    list.innerHTML = '';
+    sessions.forEach(function(s, i) {
+      var item = document.createElement('div');
+      item.className = 'session-item' + (i === 0 ? ' active' : '');
+      item.textContent = s.task.slice(0, 50) + (s.task.length > 50 ? '...' : '');
+      item.title = s.task;
+      list.appendChild(item);
+    });
+  }
+
+  function newSession() {
+    document.getElementById('taskInput').value = '';
+    document.getElementById('taskInput').focus();
+    var hint = document.createElement('div');
+    hint.id = 'emptyHint';
+    hint.innerHTML = '<div class="empty-icon"></div><div class="empty-title">Crie qualquer coisa</div><div class="empty-sub">Descreva uma tarefa e pressione Enter</div>';
+    logEl.innerHTML = '';
+    logEl.appendChild(hint);
+    thinkingEl = null;
+    setStatus('', 'Pronto');
+    runBtn.disabled = false;
+    document.querySelectorAll('.session-item').forEach(function(el){ el.classList.remove('active'); });
+    if (document.querySelector('.session-item')) document.querySelector('.session-item').classList.remove('active');
+  }
+
+  renderSessions();
+
+  /* ── Load models ─────────────────────────── */
+  async function loadModels() {
+    var sel = document.getElementById('modelSelect');
+    var savedModel = store.get('model', 'qwen2.5-coder:7b');
+    var apiKey = document.getElementById('apiKeyInput').value.trim();
+    try {
+      var res = await fetch('/v1/adapters/selah-coder/models', {
+        headers: { 'x-selah-api-key': apiKey },
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      var models = data.models || [];
+      sel.innerHTML = '';
+      if (!models.length) {
+        var o = document.createElement('option');
+        o.value = savedModel; o.textContent = savedModel;
+        sel.appendChild(o);
+        return;
+      }
+      models.forEach(function(name) {
+        var o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        if (name === savedModel) o.selected = true;
+        sel.appendChild(o);
+      });
+      if (!sel.value) sel.value = models[0];
+    } catch(e) {
+      sel.innerHTML = '<option value="' + savedModel + '">' + savedModel + '</option>';
+    }
+  }
+
+  loadModels();
+
+  /* ── Project memory ──────────────────────── */
+  async function loadMemory() {
+    var workdir = document.getElementById('workdirInput').value.trim();
+    var apiKey  = document.getElementById('apiKeyInput').value.trim();
+    var bar     = document.getElementById('memoryBar');
+    var btn     = document.getElementById('memoryBtn');
+    if (!workdir || !apiKey) { bar.style.display = 'none'; btn.style.display = 'none'; return; }
+    try {
+      var res  = await fetch('/v1/adapters/selah-coder/memory?workdir=' + encodeURIComponent(workdir), {
+        headers: { 'x-selah-api-key': apiKey },
+      });
+      var data = await res.json();
+      if (data.exists && data.content) {
+        document.getElementById('memoryContent').textContent = data.content;
+        document.getElementById('memoryPath').textContent = workdir + '/.selah/memory.md';
+        bar.style.display = 'block';
+        btn.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+        btn.style.display = 'none';
+        document.getElementById('memoryPanel').style.display = 'none';
+      }
+    } catch(e) {
+      bar.style.display = 'none';
+      btn.style.display = 'none';
+    }
+  }
+
+  function toggleMemoryPanel() {
+    var p = document.getElementById('memoryPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  }
+
+  loadMemory();
+
+  /* ── Status ──────────────────────────────── */
+  function setStatus(state, text) {
+    dotEl.className = 'status-dot' + (state ? ' ' + state : '');
+    textEl.textContent = text;
+  }
+
+  /* ── Log helpers ─────────────────────────── */
+  function addToLog(el) {
+    var hint = document.getElementById('emptyHint');
+    if (hint) hint.parentNode.removeChild(hint);
+    logEl.appendChild(el);
+    logEl.scrollTop = logEl.scrollHeight;
+    return el;
+  }
+
+  function removeThinking() {
+    if (thinkingEl && thinkingEl.parentNode) thinkingEl.parentNode.removeChild(thinkingEl);
+    thinkingEl = null;
+  }
+
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+
+  /* ── Tool helpers ────────────────────────── */
+  function toolColor(t) {
+    return ({ run_bash:'#60a5fa', write_file:'#4ade80', read_file:'#c4b5fd', list_dir:'#fbbf24', search_files:'#f87171' })[t] || '#888';
+  }
+
+  function mainArg(tool, args) {
+    if (!args) return '';
+    if (tool === 'run_bash')     return args.command || '';
+    if (tool === 'write_file')   return String(args.path || '');
+    if (tool === 'read_file')    return String(args.path || '');
+    if (tool === 'list_dir')     return String(args.path || '.');
+    if (tool === 'search_files') return '"' + (args.pattern || '') + '"' + (args.path ? '  ' + args.path : '');
+    return JSON.stringify(args);
+  }
+
+  /* ── Event renderers ─────────────────────── */
+  function onThinking(ev) {
+    removeThinking();
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;color:' + 'var(--muted)' + ';font-size:12px;';
+    var dots = document.createElement('div');
+    dots.className = 'dots';
+    dots.innerHTML = '<span></span><span></span><span></span>';
+    row.appendChild(dots);
+    var t = document.createElement('span');
+    t.textContent = 'Pensando';
+    row.appendChild(t);
+    var i = document.createElement('span');
+    i.style.cssText = 'font-size:10px;color:var(--muted);';
+    i.textContent = 'iter ' + ev.iteration;
+    row.appendChild(i);
+    thinkingEl = addToLog(row);
+  }
+
+  function onToolCall(ev) {
+    removeThinking();
+    var id    = 'tc' + Date.now();
+    var color = toolColor(ev.tool);
+    var args  = ev.args || {};
+
+    var card = document.createElement('div');
+    card.style.background   = 'var(--surface)';
+    card.style.border       = '1px solid var(--border2)';
+    card.style.borderRadius = '8px';
+    card.style.padding      = '9px 12px';
+    card.style.cursor       = 'pointer';
+    card.onclick = function() { toggle(id); };
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+    var badge = document.createElement('span');
+    badge.textContent = String(ev.tool || 'tool');
+    badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.4px;flex-shrink:0;background:' + color + '22;color:' + color + ';';
+    row.appendChild(badge);
+
+    var lbl = document.createElement('span');
+    lbl.textContent = mainArg(ev.tool, args);
+    lbl.style.cssText = 'font-family:var(--mono);font-size:12px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    row.appendChild(lbl);
+
+    var chev = document.createElement('span');
+    chev.id = 'chev-' + id;
+    chev.textContent = '▾';
+    chev.style.cssText = 'font-size:10px;color:var(--muted);flex-shrink:0;';
+    row.appendChild(chev);
+
+    card.appendChild(row);
+
+    var detail = document.createElement('pre');
+    detail.id = id;
+    detail.textContent = JSON.stringify(args, null, 2);
+    detail.style.cssText = 'display:none;margin-top:8px;padding:8px 10px;background:var(--sb);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;';
+    card.appendChild(detail);
+
+    addToLog(card);
+  }
+
+  function onToolResult(ev) {
+    var result  = String(ev.result || '');
+    var isOk    = result.indexOf('Error') !== 0;
+    var preview = result.replace(/\n/g, ' ').slice(0, 130) + (result.length > 130 ? '...' : '');
+    var id      = 'tr' + Date.now();
+
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--sb);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;';
+    card.onclick = function() { toggle(id); };
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:7px;';
+
+    var st = document.createElement('span');
+    st.textContent = isOk ? '✓' : '✗';
+    st.style.cssText = 'font-weight:700;flex-shrink:0;font-size:12px;color:' + (isOk ? 'var(--green)' : 'var(--red)') + ';';
+    row.appendChild(st);
+
+    var tl = document.createElement('span');
+    tl.textContent = String(ev.tool || '');
+    tl.style.cssText = 'font-size:10px;color:var(--muted);flex-shrink:0;text-transform:uppercase;letter-spacing:0.3px;';
+    row.appendChild(tl);
+
+    var pv = document.createElement('span');
+    pv.textContent = preview;
+    pv.style.cssText = 'font-family:var(--mono);font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    row.appendChild(pv);
+
+    var chev = document.createElement('span');
+    chev.id = 'chev-' + id;
+    chev.textContent = '▾';
+    chev.style.cssText = 'font-size:10px;color:var(--muted);flex-shrink:0;';
+    row.appendChild(chev);
+
+    card.appendChild(row);
+
+    var body = document.createElement('pre');
+    body.id = id;
+    body.textContent = result;
+    body.style.cssText = 'display:none;margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:6px;border-top:1px solid var(--border2);font-family:var(--mono);font-size:11px;color:var(--text2);white-space:pre-wrap;word-break:break-all;max-height:180px;overflow-y:auto;';
+    card.appendChild(body);
+
+    addToLog(card);
+  }
+
+  function onDone(ev) {
+    removeThinking();
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border2);border-left:2px solid var(--green);border-radius:8px;padding:14px 16px;';
+
+    var lbl = document.createElement('div');
+    lbl.textContent = ev.status === 'done' ? 'CONCLUIDO' : 'LIMITE DE ITERACOES';
+    lbl.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.7px;color:var(--green);margin-bottom:10px;';
+    card.appendChild(lbl);
+
+    var txt = document.createElement('div');
+    txt.textContent = ev.result || '';
+    txt.style.cssText = 'color:var(--text);line-height:1.75;white-space:pre-wrap;font-size:13px;';
+    card.appendChild(txt);
+
+    var meta = document.createElement('div');
+    meta.style.cssText = 'margin-top:12px;display:flex;gap:12px;font-size:10px;color:var(--muted);';
+    var is = document.createElement('span');
+    is.textContent = ev.iterations + ' iteracoes';
+    var ms = document.createElement('span');
+    ms.textContent = String(ev.model || '');
+    meta.appendChild(is); meta.appendChild(ms);
+    card.appendChild(meta);
+
+    addToLog(card);
+    setStatus('', 'Pronto');
+    runBtn.disabled = false;
+    setTimeout(loadMemory, 800);
+  }
+
+  function onError(ev) {
+    removeThinking();
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border2);border-left:2px solid var(--red);border-radius:8px;padding:12px 16px;';
+
+    var lbl = document.createElement('div');
+    lbl.textContent = 'ERRO';
+    lbl.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.7px;color:var(--red);margin-bottom:6px;';
+    card.appendChild(lbl);
+
+    var msg = document.createElement('div');
+    msg.textContent = String(ev.message || 'Erro desconhecido');
+    msg.style.cssText = 'font-family:var(--mono);font-size:12px;color:var(--text2);';
+    card.appendChild(msg);
+
+    addToLog(card);
+    setStatus('error', 'Erro');
+    runBtn.disabled = false;
+  }
+
+  /* ── Toggle ──────────────────────────────── */
+  function toggle(id) {
+    var b = document.getElementById(id);
+    var c = document.getElementById('chev-' + id);
+    if (!b) return;
+    var open = b.style.display === 'none' || b.style.display === '';
+    b.style.display = open ? 'block' : 'none';
+    if (c) c.textContent = open ? '▴' : '▾';
+  }
+
+  var planCardEl = null;
+
+  function onDecomposed(ev) {
+    removeThinking();
+    var subtasks = ev.subtasks || [];
+
+    var card = document.createElement('div');
+    card.id = 'planCard';
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;';
+
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.6px;color:var(--accent);text-transform:uppercase;margin-bottom:10px;';
+    hdr.textContent = 'PLANO — ' + subtasks.length + ' subtarefas';
+    card.appendChild(hdr);
+
+    var list = document.createElement('div');
+    list.id = 'planList';
+    list.style.cssText = 'display:flex;flex-direction:column;gap:5px;';
+
+    subtasks.forEach(function(task, i) {
+      var row = document.createElement('div');
+      row.id = 'plan-item-' + i;
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);';
+
+      var icon = document.createElement('span');
+      icon.id = 'plan-icon-' + i;
+      icon.textContent = '○';
+      icon.style.cssText = 'flex-shrink:0;font-size:11px;color:var(--muted);margin-top:1px;min-width:12px;';
+      row.appendChild(icon);
+
+      var txt = document.createElement('span');
+      txt.textContent = task;
+      txt.style.cssText = 'line-height:1.5;';
+      row.appendChild(txt);
+
+      list.appendChild(row);
+    });
+
+    card.appendChild(list);
+    planCardEl = card;
+    addToLog(card);
+  }
+
+  function onSubtaskStart(ev) {
+    var icon = document.getElementById('plan-icon-' + ev.index);
+    if (icon) { icon.textContent = '▶'; icon.style.color = 'var(--accent)'; }
+    var item = document.getElementById('plan-item-' + ev.index);
+    if (item) item.style.color = 'var(--text)';
+
+    var sep = document.createElement('div');
+    sep.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0 4px;';
+
+    var line1 = document.createElement('div');
+    line1.style.cssText = 'flex:1;height:1px;background:var(--border);';
+    sep.appendChild(line1);
+
+    var lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:10px;color:var(--muted);white-space:nowrap;padding:0 6px;font-weight:600;letter-spacing:0.4px;';
+    lbl.textContent = (ev.index + 1) + ' / ' + ev.total;
+    sep.appendChild(lbl);
+
+    var line2 = document.createElement('div');
+    line2.style.cssText = 'flex:1;height:1px;background:var(--border);';
+    sep.appendChild(line2);
+
+    addToLog(sep);
+  }
+
+  function onSubtaskDone(ev) {
+    var icon = document.getElementById('plan-icon-' + ev.index);
+    if (icon) { icon.textContent = '✓'; icon.style.color = 'var(--green)'; }
+    var item = document.getElementById('plan-item-' + ev.index);
+    if (item) item.style.color = 'var(--muted)';
+  }
+
+  function onContext(ev) {
+    var files = ev.files || [];
+    if (!files.length) return;
+
+    var card = document.createElement('div');
+    card.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;flex-wrap:wrap;';
+
+    var lbl = document.createElement('span');
+    lbl.textContent = 'Contexto';
+    lbl.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.5px;color:var(--muted);text-transform:uppercase;flex-shrink:0;';
+    card.appendChild(lbl);
+
+    files.forEach(function(f) {
+      var chip = document.createElement('span');
+      chip.textContent = f;
+      chip.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--accent);background:#3d2f6a33;border:1px solid #3d2f6a;border-radius:4px;padding:1px 6px;';
+      card.appendChild(chip);
+    });
+
+    addToLog(card);
+  }
+
+  /* ── Dispatcher ──────────────────────────── */
+  function handleEvent(ev) {
+    console.log('[SelahCoder]', ev.type, ev);
+    if (ev.type === 'context')       return onContext(ev);
+    if (ev.type === 'decomposed')    return onDecomposed(ev);
+    if (ev.type === 'subtask_start') return onSubtaskStart(ev);
+    if (ev.type === 'subtask_done')  return onSubtaskDone(ev);
+    if (ev.type === 'thinking')      return onThinking(ev);
+    if (ev.type === 'tool_call')     return onToolCall(ev);
+    if (ev.type === 'tool_result')   return onToolResult(ev);
+    if (ev.type === 'done')          return onDone(ev);
+    if (ev.type === 'error')         return onError(ev);
+  }
+
+  function setBusy(busy) {
+    runBtn.disabled = busy;
+    var db = document.getElementById('decomposeBtn');
+    if (db) db.disabled = busy;
+    if (!busy) setStatus('', 'Pronto');
+  }
+
+  /* ── Decompose and run ───────────────────── */
+  async function runDecompose() {
+    var task = document.getElementById('taskInput').value.trim();
+    if (!task || runBtn.disabled) return;
+
+    var apiKey           = document.getElementById('apiKeyInput').value.trim();
+    var workingDirectory = document.getElementById('workdirInput').value.trim();
+    var model            = document.getElementById('modelSelect').value;
+    var maxIterations    = parseInt(document.getElementById('maxIterInput').value, 10) || 10;
+
+    setBusy(true);
+    planCardEl = null;
+    setStatus('running', 'Decompondo...');
+    document.getElementById('taskInput').value = '';
+    autoResize();
+    addSession('[Decompor] ' + task);
+
+    var uc = document.createElement('div');
+    uc.style.cssText = 'background:var(--surface);border:1px solid var(--border2);border-left:2px solid var(--accent);border-radius:8px;padding:12px 16px;';
+    var ul = document.createElement('div');
+    ul.textContent = 'VOCE — DECOMPOR';
+    ul.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.7px;color:var(--accent);margin-bottom:8px;';
+    uc.appendChild(ul);
+    var ut = document.createElement('div');
+    ut.textContent = task;
+    ut.style.cssText = 'color:var(--text);line-height:1.6;white-space:pre-wrap;font-size:13px;';
+    uc.appendChild(ut);
+    addToLog(uc);
+
+    var buffer = '';
+    try {
+      var res = await fetch('/v1/adapters/selah-coder/agent/decompose-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-selah-api-key': apiKey },
+        body: JSON.stringify({ task, workingDirectory, model, maxIterations }),
+      });
+
+      if (!res.ok) {
+        var eb = await res.json().catch(function(){ return {}; });
+        handleEvent({ type: 'error', message: eb.message || 'HTTP ' + res.status });
+        setBusy(false);
+        return;
+      }
+
+      var reader  = res.body.getReader();
+      var decoder = new TextDecoder();
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].indexOf('data: ') === 0) {
+            try {
+              var ev = JSON.parse(lines[i].slice(6));
+              if (ev.type === 'decomposed') setStatus('running', 'Executando subtarefas...');
+              handleEvent(ev);
+            } catch(e) { console.warn(e); }
+          }
+        }
+      }
+    } catch(err) {
+      handleEvent({ type: 'error', message: err.message || 'Falha na conexao' });
+    }
+
+    setBusy(false);
+  }
+
+  /* ── Run task ────────────────────────────── */
+  async function runTask() {
+    var task = document.getElementById('taskInput').value.trim();
+    if (!task || runBtn.disabled) return;
+
+    var apiKey           = document.getElementById('apiKeyInput').value.trim();
+    var workingDirectory = document.getElementById('workdirInput').value.trim();
+    var model            = document.getElementById('modelSelect').value;
+    var maxIterations    = parseInt(document.getElementById('maxIterInput').value, 10) || 10;
+
+    setBusy(true);
+    setStatus('running', 'Executando...');
+    document.getElementById('taskInput').value = '';
+    autoResize();
+
+    addSession(task);
+
+    /* User message */
+    var uc = document.createElement('div');
+    uc.style.cssText = 'background:var(--surface);border:1px solid var(--border2);border-left:2px solid var(--blue);border-radius:8px;padding:12px 16px;';
+    var ul = document.createElement('div');
+    ul.textContent = 'VOCE';
+    ul.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.7px;color:var(--blue);margin-bottom:8px;';
+    uc.appendChild(ul);
+    var ut = document.createElement('div');
+    ut.textContent = task;
+    ut.style.cssText = 'color:var(--text);line-height:1.6;white-space:pre-wrap;font-size:13px;';
+    uc.appendChild(ut);
+    addToLog(uc);
+
+    var buffer = '';
+    try {
+      var res = await fetch('/v1/adapters/selah-coder/agent/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-selah-api-key': apiKey },
+        body: JSON.stringify({ task, workingDirectory, model, maxIterations }),
+      });
+
+      if (!res.ok) {
+        var eb = await res.json().catch(function(){ return {}; });
+        handleEvent({ type: 'error', message: eb.message || 'HTTP ' + res.status });
+        return;
+      }
+
+      var reader  = res.body.getReader();
+      var decoder = new TextDecoder();
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].indexOf('data: ') === 0) {
+            try { handleEvent(JSON.parse(lines[i].slice(6))); } catch(e) { console.warn(e); }
+          }
+        }
+      }
+    } catch(err) {
+      handleEvent({ type: 'error', message: err.message || 'Falha na conexao' });
+    }
+    setBusy(false);
+  }
+
+  /* ── Auto-resize textarea ────────────────── */
+  function autoResize() {
+    var ta = document.getElementById('taskInput');
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
+  }
+
+  document.getElementById('taskInput').addEventListener('input', autoResize);
+
+  document.getElementById('taskInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      runTask();
+    }
+  });
+</script>
+</body>
+</html>

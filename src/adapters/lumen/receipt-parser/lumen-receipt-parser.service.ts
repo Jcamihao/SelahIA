@@ -1,6 +1,7 @@
-import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import { BadGatewayException, Inject, Injectable, Logger } from '@nestjs/common';
 import { RequestContextService } from '../../../common/logging/request-context.service';
-import { GeminiProvider } from '../../../providers/gemini/gemini.provider';
+import { LlmProvider } from '../../../providers/llm-provider.interface';
+import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
 import { ParseLumenReceiptDto } from './dto/parse-lumen-receipt.dto';
 import { buildLumenReceiptParserPrompt } from './lumen-receipt-parser.prompt';
 import {
@@ -13,13 +14,13 @@ export class LumenReceiptParserService {
   private readonly logger = new Logger(LumenReceiptParserService.name);
 
   constructor(
-    private readonly geminiProvider: GeminiProvider,
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
     private readonly requestContext: RequestContextService,
   ) {}
 
   private responseMeta(model: string) {
     return {
-      provider: 'gemini-developer-api',
+      provider: 'ollama',
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',
       model,
       generatedAt: new Date().toISOString(),
@@ -57,7 +58,7 @@ export class LumenReceiptParserService {
       `[${requestId}] Lumen receipt parser started file="${String(input.fileName || '').trim() || 'unknown'}" mime=${String(input.mimeType || '').trim() || 'unknown'}`,
     );
 
-    const result = await this.geminiProvider.generateTextFromContents({
+    const result = await this.llmProvider.generateTextFromContents({
       systemInstruction:
         'Voce e Selah IA, motor multimodal do LUMEN para leitura de notas fiscais e comprovantes. Extraia dados somente da imagem enviada e responda em JSON valido, sem markdown e sem comentarios extras fora do objeto JSON.',
       contents: baseContents,
@@ -78,7 +79,7 @@ export class LumenReceiptParserService {
         `[${requestId}] Lumen receipt parser retrying with brazilian merchant/items focus`,
       );
 
-      const retryResult = await this.geminiProvider.generateTextFromContents({
+      const retryResult = await this.llmProvider.generateTextFromContents({
         systemInstruction:
           'Voce e Selah IA, especialista em notas fiscais brasileiras. Responda somente com JSON valido. Priorize identificar estabelecimento, CNPJ, QR Code, chave de acesso, tipo do documento e itens reais da compra.',
         contents: [
@@ -140,7 +141,7 @@ export class LumenReceiptParserService {
       }
 
       throw new BadGatewayException(
-        'Gemini retornou um JSON invalido para leitura de nota fiscal.',
+        'Ollama retornou um JSON invalido para leitura de nota fiscal.',
       );
     }
   }
