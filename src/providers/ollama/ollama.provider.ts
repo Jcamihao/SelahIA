@@ -13,6 +13,7 @@ import { RequestContextService } from '../../common/logging/request-context.serv
 type OllamaMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  images?: string[];
 };
 
 type OllamaChatResponse = {
@@ -31,7 +32,7 @@ type OllamaChatResponse = {
 export class OllamaProvider implements LlmProvider {
   private readonly logger = new Logger(OllamaProvider.name);
   private readonly defaultModel = String(
-    process.env.OLLAMA_MODEL || 'phi4-mini',
+    process.env.OLLAMA_MODEL || 'gemma4:e4b',
   ).trim();
   private readonly baseUrl = String(
     process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
@@ -137,12 +138,22 @@ export class OllamaProvider implements LlmProvider {
       const rawRole = String(item.role || 'user').trim();
       const role: OllamaMessage['role'] = rawRole === 'model' ? 'assistant' : 'user';
       const parts = (item.parts as Array<Record<string, unknown>>) || [];
+
       const text = parts
         .map((p) => String(p?.text || '').trim())
         .filter(Boolean)
         .join('\n')
         .trim();
-      if (text) messages.push({ role, content: text });
+
+      const images = parts
+        .map((p) => (p?.inline_data as Record<string, unknown> | undefined)?.data)
+        .filter((d): d is string => typeof d === 'string' && d.length > 0);
+
+      if (text || images.length > 0) {
+        const msg: OllamaMessage = { role, content: text };
+        if (images.length > 0) msg.images = images;
+        messages.push(msg);
+      }
     }
 
     return messages;

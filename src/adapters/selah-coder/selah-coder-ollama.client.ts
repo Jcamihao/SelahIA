@@ -104,6 +104,18 @@ export const SELAH_CODER_TOOLS: SelahCoderToolDefinition[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'run_tests',
+      description: 'Run the project test suite (auto-detects jest, vitest, or pytest) and return results. Call this after implementing a feature to verify it works.',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+    },
+  },
 ];
 
 @Injectable()
@@ -127,7 +139,9 @@ export class SelahCoderOllamaClient {
     model: string,
     messages: SelahCoderMessage[],
     tools: SelahCoderToolDefinition[],
+    onToken?: (token: string) => void,
   ): Promise<SelahCoderChatResult> {
+    if (onToken) return this.chatStream(model, messages, tools, onToken);
     try {
       const response = await this.httpClient.post(`${this.baseUrl}/api/chat`, {
         model,
@@ -189,63 +203,147 @@ export class SelahCoderOllamaClient {
     }
   }
 
+  private async chatStream(
+    model: string,
+    messages: SelahCoderMessage[],
+    tools: SelahCoderToolDefinition[],
+    onToken: (token: string) => void,
+  ): Promise<SelahCoderChatResult> {
+    const response = await this.httpClient.post(
+      `${this.baseUrl}/api/chat`,
+      { model, messages, tools, stream: true },
+      { responseType: 'stream', timeout: this.timeoutMs },
+    );
+
+    return new Promise<SelahCoderChatResult>((resolve, reject) => {
+      const stream = response.data as import('stream').Readable;
+      let buffer = '';
+      let accContent = '';
+      let finalData: any = null;
+
+      // Once the model starts outputting JSON (tool-call text), we stop forwarding
+      // tokens to the UI. This keeps the thinking area clean. The full content is
+      // still accumulated in accContent for the fallback parser.
+      let streamingJson = false;
+
+      stream.on('data', (chunk: Buffer) => {
+        buffer += chunk.toString('utf-8');
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line);
+            const token: string = parsed?.message?.content ?? '';
+            if (token) {
+              accContent += token;
+              // Detect the moment the model transitions to JSON output
+              if (!streamingJson && accContent.trimStart().startsWith('{')) {
+                streamingJson = true;
+              }
+              if (!streamingJson) onToken(token);
+            }
+            if (parsed.done) finalData = parsed;
+          } catch { /* skip malformed lines */ }
+        }
+      });
+
+      stream.on('end', () => {
+        if (!finalData) { reject(new Error('Ollama stream ended without done signal')); return; }
+        const msg = finalData.message ?? {};
+        let toolCalls: SelahCoderToolCall[] | undefined = Array.isArray(msg.tool_calls)
+          ? msg.tool_calls.map((tc: any) => ({
+              function: {
+                name: String(tc?.function?.name || ''),
+                arguments: typeof tc?.function?.arguments === 'object'
+                  ? tc.function.arguments
+                  : this.safeParseJson(tc?.function?.arguments),
+              },
+            }))
+          : undefined;
+
+        if (!toolCalls?.length && accContent) {
+          const fallback = this.extractToolCallsFromContent(accContent);
+          if (fallback?.length) toolCalls = fallback;
+        }
+
+        resolve({
+          message: {
+            role: msg.role ?? 'assistant',
+            content: toolCalls?.length ? '' : accContent,
+            tool_calls: toolCalls?.length ? toolCalls : undefined,
+          },
+          doneReason: String(finalData.done_reason || 'unknown').trim(),
+          promptTokens: Number(finalData.prompt_eval_count || 0),
+          evalTokens: Number(finalData.eval_count || 0),
+        });
+      });
+
+      stream.on('error', reject);
+    });
+  }
+
   private extractToolCallsFromContent(content: string): SelahCoderToolCall[] | undefined {
     const KNOWN_TOOLS = new Set([
-      'read_file', 'write_file', 'run_bash', 'list_dir', 'search_files',
+      'read_file', 'write_file', 'run_bash', 'list_dir', 'search_files', 'run_tests',
     ]);
 
     const tryParse = (text: string): SelahCoderToolCall | undefined => {
-      const trimmed = text.trim();
-      // Try 1: direct parse (handles backticks already inside valid JSON strings).
-      // Try 2: sanitize backtick delimiters first, then parse (handles the case
-      //        where the model used `...` as a string delimiter instead of "...").
-      const candidates = [trimmed, this.sanitizeBackticks(trimmed)];
+      const candidates = [text.trim(), this.sanitizeBackticks(text.trim())];
       for (const candidate of candidates) {
         try {
           const parsed = JSON.parse(candidate);
-          // {"name": "...", "arguments": {...}}
           if (typeof parsed?.name === 'string' && KNOWN_TOOLS.has(parsed.name)) {
-            return {
-              function: {
-                name: parsed.name,
-                arguments: typeof parsed.arguments === 'object' ? parsed.arguments ?? {} : {},
-              },
-            };
+            return { function: { name: parsed.name, arguments: typeof parsed.arguments === 'object' ? (parsed.arguments ?? {}) : {} } };
           }
-          // {"tool": "...", "args": {...}}
           if (typeof parsed?.tool === 'string' && KNOWN_TOOLS.has(parsed.tool)) {
-            return {
-              function: {
-                name: parsed.tool,
-                arguments: typeof parsed.args === 'object' ? parsed.args ?? {} : {},
-              },
-            };
+            return { function: { name: parsed.tool, arguments: typeof parsed.args === 'object' ? (parsed.args ?? {}) : {} } };
           }
-        } catch {
-          // try next candidate
-        }
+        } catch { /* try next */ }
       }
       return undefined;
     };
 
-    // Pattern 1: bare JSON at root level
-    const direct = tryParse(content);
-    if (direct) return [direct];
+    /**
+     * Scan `text` for ALL top-level {...} objects using proper bracket/string
+     * tracking, then try to parse each one as a tool call.
+     * This handles: single objects, multiple objects in sequence, objects inside
+     * code fences, and objects embedded in prose.
+     */
+    const extractAll = (text: string): SelahCoderToolCall[] => {
+      const results: SelahCoderToolCall[] = [];
+      let i = 0;
+      while (i < text.length) {
+        const start = text.indexOf('{', i);
+        if (start === -1) break;
 
-    // Pattern 2: JSON inside a ```json ... ``` code fence
-    const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
-    if (fenced) {
-      const fromFence = tryParse(fenced);
-      if (fromFence) return [fromFence];
-    }
+        let depth = 0, inStr = false, esc = false, j = start;
+        for (; j < text.length; j++) {
+          const ch = text[j];
+          if (esc) { esc = false; continue; }
+          if (ch === '\\' && inStr) { esc = true; continue; }
+          if (ch === '"') { inStr = !inStr; continue; }
+          if (!inStr) {
+            if (ch === '{') depth++;
+            else if (ch === '}' && --depth === 0) break;
+          }
+        }
 
-    // Pattern 3: first {...} block found in content
-    const braceStart = content.indexOf('{');
-    const braceEnd = content.lastIndexOf('}');
-    if (braceStart !== -1 && braceEnd > braceStart) {
-      const fromBrace = tryParse(content.slice(braceStart, braceEnd + 1));
-      if (fromBrace) return [fromBrace];
-    }
+        if (depth === 0 && j < text.length) {
+          const tc = tryParse(text.slice(start, j + 1));
+          if (tc) results.push(tc);
+          i = j + 1;
+        } else {
+          i = start + 1;
+        }
+      }
+      return results;
+    };
+
+    // Strip code fences if present, then scan for all tool call objects
+    const stripped = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    const found = extractAll(stripped.trim() || content);
+    if (found.length) return found;
 
     return undefined;
   }

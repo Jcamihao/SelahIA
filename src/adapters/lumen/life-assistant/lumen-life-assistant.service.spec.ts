@@ -89,7 +89,7 @@ describe('LumenLifeAssistantService', () => {
     const generate = jest
       .fn()
       .mockResolvedValueOnce({
-        model: 'phi4-mini',
+        model: 'gemma4:e4b',
         data: {
           answer:
             'Seu saldo atual está apertado. Mantenha o ritmo e siga acompanhando com cautela.',
@@ -101,7 +101,7 @@ describe('LumenLifeAssistantService', () => {
         },
       })
       .mockResolvedValueOnce({
-        model: 'phi4-mini',
+        model: 'gemma4:e4b',
         data: {
           answer:
             'Uma dívida de 15mil precisa de negociação antes de qualquer aceleração de pagamento. Preserve moradia, alimentação e transporte, e use Revisar contas do cartão como ponto de partida para atacar primeiro o contrato com juros mais altos.',
@@ -132,7 +132,7 @@ describe('LumenLifeAssistantService', () => {
 
   it('uses the rule-based fallback after repeated generic outputs on debt guidance', async () => {
     const generate = jest.fn().mockResolvedValue({
-      model: 'phi4-mini',
+      model: 'gemma4:e4b',
       data: {
         answer:
           'Seu saldo atual está apertado. Mantenha o ritmo e siga acompanhando com cautela.',

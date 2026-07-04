@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class RunSelahCoderAgentDto {
   @IsString()
@@ -18,6 +18,11 @@ export class RunSelahCoderAgentDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(20)
+  @Max(150)
   maxIterations?: number;
+
+  /** Previous session message history for continuation */
+  @IsOptional()
+  @IsArray()
+  messages?: any[];
 }

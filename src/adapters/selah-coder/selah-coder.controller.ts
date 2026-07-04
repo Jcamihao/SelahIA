@@ -23,9 +23,19 @@ export class SelahCoderController {
   @Get('memory')
   async memory(@Query('workdir') workdir: string) {
     if (!workdir) return { exists: false, content: null };
-    const memoryPath = path.join(workdir, '.selah', 'memory.md');
     try {
-      const content = await fs.readFile(memoryPath, 'utf-8');
+      const content = await fs.readFile(path.join(workdir, '.selah', 'memory.md'), 'utf-8');
+      return { exists: true, content: content.trim() };
+    } catch {
+      return { exists: false, content: null };
+    }
+  }
+
+  @Get('instructions')
+  async instructions(@Query('workdir') workdir: string) {
+    if (!workdir) return { exists: false, content: null };
+    try {
+      const content = await fs.readFile(path.join(workdir, '.selah', 'instructions.md'), 'utf-8');
       return { exists: true, content: content.trim() };
     } catch {
       return { exists: false, content: null };
@@ -38,6 +48,13 @@ export class SelahCoderController {
     return this.selahCoderAgentService.run(dto);
   }
 
+  @Post('agent/approve')
+  @HttpCode(200)
+  approve(@Body() body: { id: string; approved: boolean }) {
+    this.selahCoderAgentService.resolveApproval(body.id, body.approved);
+    return { ok: true };
+  }
+
   @Post('agent/decompose-stream')
   async decomposeStream(@Body() dto: RunSelahCoderAgentDto, @Res() res: Response): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -46,10 +63,13 @@ export class SelahCoderController {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    const emit = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+    let cancelled = false;
+    res.on('close', () => { cancelled = true; });
+
+    const emit = (event: object) => { if (!cancelled) res.write(`data: ${JSON.stringify(event)}\n\n`); };
 
     try {
-      await this.selahCoderAgentService.decomposeAndRun(dto, emit);
+      await this.selahCoderAgentService.decomposeAndRun(dto, emit, () => cancelled);
     } catch (err: any) {
       emit({ type: 'error', message: err?.message || 'Erro desconhecido' });
     }
@@ -65,12 +85,13 @@ export class SelahCoderController {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    const emit = (event: object) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
+    let cancelled = false;
+    res.on('close', () => { cancelled = true; });
+
+    const emit = (event: object) => { if (!cancelled) res.write(`data: ${JSON.stringify(event)}\n\n`); };
 
     try {
-      await this.selahCoderAgentService.runStream(dto, emit);
+      await this.selahCoderAgentService.runStream(dto, emit, () => cancelled);
     } catch (err: any) {
       emit({ type: 'error', message: err?.message || 'Erro desconhecido' });
     }

@@ -16,7 +16,7 @@ export class HealthController {
       status: 'ok',
       service: String(process.env.SELAH_SERVICE_NAME || 'selah-ia'),
       provider: 'ollama',
-      model: String(process.env.OLLAMA_MODEL || 'phi4-mini'),
+      model: String(process.env.OLLAMA_MODEL || 'gemma4:e4b'),
     };
   }
 }

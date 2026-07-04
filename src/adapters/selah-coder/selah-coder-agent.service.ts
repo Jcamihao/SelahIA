@@ -1,18 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { exec } from 'child_process';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 import { RequestContextService } from '../../common/logging/request-context.service';
 import {
   SELAH_CODER_TOOLS,
   SelahCoderMessage,
   SelahCoderOllamaClient,
 } from './selah-coder-ollama.client';
-import { SelahCoderToolExecutorService } from './selah-coder-tool-executor.service';
+import { DiffLine, SelahCoderToolExecutorService } from './selah-coder-tool-executor.service';
 import { RunSelahCoderAgentDto } from './dto/run-selah-coder-agent.dto';
 
 const DEFAULT_MODEL = 'qwen2.5-coder:7b';
-const DEFAULT_MAX_ITERATIONS = 10;
+const DEFAULT_MAX_ITERATIONS = 150;
 
 export type SelahCoderToolCallLog = {
   iteration: number;
@@ -27,7 +31,7 @@ export type SelahCoderAgentResult = {
   generatedAt: string;
   task: string;
   workingDirectory: string;
-  status: 'done' | 'max_iterations_reached';
+  status: 'done' | 'max_iterations_reached' | 'cancelled';
   iterations: number;
   toolCallsLog: SelahCoderToolCallLog[];
   result: string;
@@ -35,13 +39,16 @@ export type SelahCoderAgentResult = {
 
 export type AgentStreamEvent =
   | { type: 'thinking'; iteration: number }
+  | { type: 'stream_token'; content: string }
   | { type: 'tool_call'; iteration: number; tool: string; args: Record<string, unknown> }
-  | { type: 'tool_result'; tool: string; result: string }
+  | { type: 'tool_result'; tool: string; result: string; diff?: DiffLine[]; isNewFile?: boolean; filePath?: string }
   | { type: 'context'; files: string[] }
+  | { type: 'snapshot'; hash: string; files: number }
+  | { type: 'approval_required'; id: string; command: string }
   | { type: 'decomposed'; subtasks: string[] }
   | { type: 'subtask_start'; index: number; total: number; task: string }
   | { type: 'subtask_done'; index: number; total: number; task: string }
-  | { type: 'done'; result: string; iterations: number; status: string; model: string }
+  | { type: 'done'; result: string; iterations: number; status: string; model: string; messages: SelahCoderMessage[]; promptTokens: number; evalTokens: number }
   | { type: 'error'; message: string };
 
 type EventEmitter = (event: AgentStreamEvent) => void;
@@ -49,6 +56,8 @@ type EventEmitter = (event: AgentStreamEvent) => void;
 @Injectable()
 export class SelahCoderAgentService {
   private readonly logger = new Logger(SelahCoderAgentService.name);
+  /** Pending approval callbacks keyed by approval ID */
+  private readonly approvalRequests = new Map<string, (approved: boolean) => void>();
 
   constructor(
     private readonly ollamaClient: SelahCoderOllamaClient,
@@ -56,22 +65,61 @@ export class SelahCoderAgentService {
     private readonly requestContext: RequestContextService,
   ) {}
 
+  /** Called by the controller when the user clicks approve/reject */
+  resolveApproval(id: string, approved: boolean): void {
+    const cb = this.approvalRequests.get(id);
+    if (cb) { cb(approved); this.approvalRequests.delete(id); }
+  }
+
+  private waitForApproval(id: string, onEvent: EventEmitter, command: string): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => {
+        this.approvalRequests.delete(id);
+        onEvent({ type: 'error', message: `Aprovação expirou para: ${command.slice(0, 80)}` });
+        resolve(false);
+      }, 60_000);
+
+      this.approvalRequests.set(id, (approved: boolean) => {
+        clearTimeout(timeout);
+        resolve(approved);
+      });
+
+      onEvent({ type: 'approval_required', id, command });
+    });
+  }
+
+  private isDangerous(command: string): boolean {
+    return [
+      /\brm\s+(-[rf]+\s+|.*\s+-[rf])/i,
+      /\bgit\s+reset\s+--hard\b/i,
+      /\bgit\s+clean\s+-f/i,
+      /\bdrop\s+(table|database|schema)\b/i,
+      /\bdelete\s+from\b/i,
+      /\btruncate\s+table\b/i,
+      /\brmdir\s+/i,
+      /\bchmod\s+[0-9]*7[0-9]*/i,
+    ].some((p) => p.test(command));
+  }
+
   run(dto: RunSelahCoderAgentDto): Promise<SelahCoderAgentResult> {
     return this.execute(dto, () => {});
   }
 
-  runStream(dto: RunSelahCoderAgentDto, onEvent: EventEmitter): Promise<SelahCoderAgentResult> {
-    return this.execute(dto, onEvent);
+  runStream(dto: RunSelahCoderAgentDto, onEvent: EventEmitter, shouldCancel?: () => boolean): Promise<SelahCoderAgentResult> {
+    return this.execute(dto, onEvent, { shouldCancel });
   }
 
-  async decomposeAndRun(dto: RunSelahCoderAgentDto, onEvent: EventEmitter): Promise<void> {
+  async decomposeAndRun(dto: RunSelahCoderAgentDto, onEvent: EventEmitter, shouldCancel?: () => boolean): Promise<void> {
     const requestId = this.requestContext.getRequestId();
     const model = String(dto.model || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
     const workingDir = this.resolveWorkingDir(dto.workingDirectory);
 
+    // Ensure working directory exists before starting
+    await fs.mkdir(workingDir, { recursive: true });
+
     // Gather context once — shared across all subtasks
     const { context: projectContext, files: contextFiles } =
-      await this.gatherProjectContext(workingDir);
+      await this.gatherProjectContext(workingDir, dto.task);
     if (contextFiles.length > 0) {
       onEvent({ type: 'context', files: contextFiles });
     }
@@ -83,18 +131,30 @@ export class SelahCoderAgentService {
     onEvent({ type: 'decomposed', subtasks });
     this.logger.log(`[${requestId}] Decomposed into ${subtasks.length} subtasks`);
 
-    // Execute each subtask sequentially
+    // Execute each subtask sequentially, injecting position context so the model
+    // knows what was already done and what is still pending.
     for (let i = 0; i < subtasks.length; i++) {
       onEvent({ type: 'subtask_start', index: i, total: subtasks.length, task: subtasks[i] });
 
+      const done    = subtasks.slice(0, i);
+      const pending = subtasks.slice(i + 1);
+
+      // Force the model to act with tools immediately instead of describing.
+      const taskDirective =
+        `SUBTASK ${i + 1} OF ${subtasks.length} — EXECUTE WITH TOOLS NOW.\n` +
+        `Do NOT describe what you will do. Call a tool immediately.\n` +
+        (done.length    ? `Already completed: ${done.join(' | ')}\n`    : '') +
+        (pending.length ? `Still pending after this: ${pending.join(' | ')}\n` : '') +
+        `\nTask: ${subtasks[i]}`;
+
       const subDto: RunSelahCoderAgentDto = {
         ...dto,
-        task: subtasks[i],
+        task: taskDirective,
       };
 
       try {
-        // Pass pre-gathered context so it isn't re-fetched; memory IS re-read per subtask
-        await this.execute(subDto, onEvent, { preContext: projectContext, emitContext: false });
+        if (shouldCancel?.()) break;
+        await this.execute(subDto, onEvent, { emitContext: false, shouldCancel });
       } catch (err: any) {
         onEvent({ type: 'error', message: `Subtask ${i + 1} failed: ${err?.message}` });
       }
@@ -106,56 +166,100 @@ export class SelahCoderAgentService {
   private async execute(
     dto: RunSelahCoderAgentDto,
     onEvent: EventEmitter,
-    opts: { preContext?: string; emitContext?: boolean } = {},
+    opts: { preContext?: string; emitContext?: boolean; shouldCancel?: () => boolean } = {},
   ): Promise<SelahCoderAgentResult> {
     const requestId = this.requestContext.getRequestId();
     const model = String(dto.model || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
     const maxIterations = Math.min(
       Number(dto.maxIterations || DEFAULT_MAX_ITERATIONS),
-      20,
+      150,
     );
     const workingDir = this.resolveWorkingDir(dto.workingDirectory);
-    const projectMemory = await this.readProjectMemory(workingDir);
+    const [projectMemory, projectInstructions] = await Promise.all([
+      this.readProjectMemory(workingDir),
+      this.readProjectInstructions(workingDir),
+    ]);
 
     // Use pre-gathered context (from decomposeAndRun) or gather fresh
     let projectContext = opts.preContext ?? null;
     let contextFiles: string[] = [];
-    if (!projectContext) {
-      const gathered = await this.gatherProjectContext(workingDir);
+
+    // Continuation: if the client sent previous session messages, resume from them.
+    // Otherwise build fresh history.
+    const isResume = Array.isArray(dto.messages) && dto.messages.length > 0;
+
+    if (!isResume && !projectContext) {
+      const gathered = await this.gatherProjectContext(workingDir, dto.task);
       projectContext = gathered.context;
       contextFiles = gathered.files;
     }
 
     this.logger.log(
-      `[${requestId}] SelahCoderAgent started model=${model} maxIterations=${maxIterations} cwd=${workingDir} memory=${projectMemory ? 'loaded' : 'none'} contextFiles=${contextFiles.join(',')}`,
+      `[${requestId}] SelahCoderAgent started model=${model} maxIterations=${maxIterations} cwd=${workingDir} memory=${projectMemory ? 'loaded' : 'none'} resume=${isResume} contextFiles=${contextFiles.join(',')}`,
     );
 
-    if ((opts.emitContext ?? true) && contextFiles.length > 0) {
+    if (!isResume && (opts.emitContext ?? true) && contextFiles.length > 0) {
       onEvent({ type: 'context', files: contextFiles });
     }
 
-    const messages: SelahCoderMessage[] = [
-      { role: 'system', content: this.buildSystemPrompt(workingDir, projectMemory) },
-    ];
+    let messages: SelahCoderMessage[];
 
-    if (projectContext) {
-      messages.push({ role: 'user', content: '[AUTO-CONTEXT] Project files read automatically before your task:' });
-      messages.push({ role: 'assistant', content: projectContext });
+    // Git snapshot before execution (only for fresh tasks, not subtasks or resumes)
+    if (!isResume && (opts.emitContext ?? true)) {
+      await this.gitSnapshot(workingDir, dto.task, onEvent);
     }
 
-    messages.push({ role: 'user', content: dto.task });
+    if (isResume) {
+      // Resume: clone stored history, refresh system prompt with latest memory, append new task.
+      messages = (dto.messages as SelahCoderMessage[]).map((m, i) =>
+        i === 0 && m.role === 'system'
+          ? { role: 'system' as const, content: this.buildSystemPrompt(workingDir, projectMemory, projectInstructions) }
+          : m,
+      );
+      messages.push({ role: 'user', content: dto.task });
+    } else {
+      messages = [
+        { role: 'system', content: this.buildSystemPrompt(workingDir, projectMemory, projectInstructions) },
+      ];
+      if (projectContext) {
+        messages.push({ role: 'user', content: '[AUTO-CONTEXT] Project files read automatically before your task:' });
+        messages.push({ role: 'assistant', content: projectContext });
+      }
+      messages.push({ role: 'user', content: dto.task });
+    }
 
     const toolCallsLog: SelahCoderToolCallLog[] = [];
     let iteration = 0;
     let finalResult = '';
     let status: SelahCoderAgentResult['status'] = 'done';
+    let totalToolCallsMade = 0;
+    let totalPromptTokens = 0;
+    let totalEvalTokens = 0;
 
     while (iteration < maxIterations) {
+      // Check cancellation at the top of each iteration
+      if (opts.shouldCancel?.()) {
+        status = 'max_iterations_reached';
+        finalResult = 'Tarefa interrompida pelo usuário.';
+        break;
+      }
+
       iteration++;
+
+      this.pruneMessages(messages);
 
       onEvent({ type: 'thinking', iteration });
 
-      const response = await this.ollamaClient.chat(model, messages, SELAH_CODER_TOOLS);
+      // Stream tokens to UI as the model generates them
+      const response = await this.ollamaClient.chat(
+        model,
+        messages,
+        SELAH_CODER_TOOLS,
+        (token) => onEvent({ type: 'stream_token', content: token }),
+      );
+
+      totalPromptTokens += response.promptTokens;
+      totalEvalTokens   += response.evalTokens;
 
       this.logger.log(
         `[${requestId}] SelahCoderAgent iteration=${iteration} doneReason=${response.doneReason} toolCalls=${response.message.tool_calls?.length ?? 0} tokens(prompt=${response.promptTokens}, eval=${response.evalTokens})`,
@@ -166,17 +270,12 @@ export class SelahCoderAgentService {
       const toolCalls = response.message.tool_calls;
       const content   = response.message.content;
 
-      // Empty response with no tool calls: nudge the model to continue rather
-      // than treating silence as "task complete". Cap at 2 consecutive nudges
-      // to avoid an infinite loop.
+      // Empty response with no tool calls
       if (!toolCalls?.length && !content) {
         const nudgeCount = messages.filter(
           m => m.role === 'user' && m.content === 'Continue. What is the next step?'
         ).length;
         if (nudgeCount < 2) {
-          this.logger.warn(
-            `[${this.requestContext.getRequestId()}] SelahCoderAgent empty response at iteration=${iteration}, nudging model`,
-          );
           messages.push({ role: 'user', content: 'Continue. What is the next step?' });
           continue;
         }
@@ -185,6 +284,21 @@ export class SelahCoderAgentService {
       }
 
       if (!toolCalls || toolCalls.length === 0) {
+        // Model responded with text only. If it never called a single tool, it is
+        // describing instead of executing — force it to act.
+        if (totalToolCallsMade === 0 && iteration <= 3) {
+          this.logger.warn(
+            `[${requestId}] Model responded with text but called no tools (iter=${iteration}) — forcing tool use`,
+          );
+          messages.push({
+            role: 'user',
+            content:
+              'You described what to do but did not call any tools. ' +
+              'You MUST call a tool RIGHT NOW to start working. ' +
+              'Begin with list_dir to see the current state, then use write_file or run_bash to create files.',
+          });
+          continue;
+        }
         finalResult = content;
         break;
       }
@@ -204,19 +318,39 @@ export class SelahCoderAgentService {
         );
 
         onEvent({ type: 'tool_call', iteration, tool: toolName, args: toolArgs });
+        totalToolCallsMade++;
 
-        const toolResult = await this.toolExecutor.execute(toolName, toolArgs, workingDir);
+        // Approval gate for destructive bash commands
+        if (toolName === 'run_bash' && this.isDangerous(String(toolArgs.command ?? ''))) {
+          const approvalId = `ap-${Date.now()}`;
+          const approved = await this.waitForApproval(approvalId, onEvent, String(toolArgs.command));
+          if (!approved) {
+            const rejected = { result: 'Comando rejeitado pelo usuário. Escolha uma abordagem diferente.' };
+            onEvent({ type: 'tool_result', tool: toolName, result: rejected.result });
+            messages.push({ role: 'tool', content: rejected.result });
+            continue;
+          }
+        }
 
-        onEvent({ type: 'tool_result', tool: toolName, result: toolResult });
+        const execResult = await this.toolExecutor.execute(toolName, toolArgs, workingDir);
+
+        onEvent({
+          type: 'tool_result',
+          tool: toolName,
+          result: execResult.result,
+          diff: execResult.diff,
+          isNewFile: execResult.isNewFile,
+          filePath: execResult.filePath,
+        });
 
         toolCallsLog.push({
           iteration,
           tool: toolName,
           args: toolArgs,
-          resultPreview: toolResult.slice(0, 300),
+          resultPreview: execResult.result.slice(0, 300),
         });
 
-        messages.push({ role: 'tool', content: toolResult });
+        messages.push({ role: 'tool', content: execResult.result });
       }
     }
 
@@ -236,9 +370,27 @@ export class SelahCoderAgentService {
       result: finalResult,
     };
 
-    onEvent({ type: 'done', result: finalResult, iterations: iteration, status, model });
+    onEvent({ type: 'done', result: finalResult, iterations: iteration, status, model, messages, promptTokens: totalPromptTokens, evalTokens: totalEvalTokens });
 
     return result;
+  }
+
+  /**
+   * Keeps the conversation history from growing unboundedly.
+   * Strategy: always preserve the first 4 messages (system, context user/assistant, task),
+   * then keep only the most recent 12 messages. Old tool results (large file reads) are
+   * discarded first since they're the main source of context bloat.
+   */
+  private pruneMessages(messages: SelahCoderMessage[]): void {
+    const HEADER = 4;    // system + context user + context assistant + task
+    const TAIL   = 12;   // recent exchanges to keep
+
+    if (messages.length <= HEADER + TAIL) return;
+
+    const header = messages.slice(0, HEADER);
+    const tail   = messages.slice(-TAIL);
+
+    messages.splice(0, messages.length, ...header, ...tail);
   }
 
   private resolveWorkingDir(workingDirectory?: string): string {
@@ -250,6 +402,7 @@ export class SelahCoderAgentService {
 
   private async gatherProjectContext(
     workingDir: string,
+    task?: string,
   ): Promise<{ context: string; files: string[] }> {
     const sections: string[] = [];
     const files: string[] = [];
@@ -293,7 +446,83 @@ export class SelahCoderAgentService {
       } catch { /* file doesn't exist — skip */ }
     }
 
+    // Smart context: grep for files relevant to this task
+    if (task) {
+      const alreadyIncluded = new Set(files);
+      const relevant = await this.findRelevantFiles(task, workingDir, alreadyIncluded);
+      if (relevant.length > 0) {
+        sections.push(`## Relevant files (auto-detected for this task)`);
+        relevant.forEach(({ rel, content }) => {
+          sections.push(content);
+          files.push(rel);
+        });
+      }
+    }
+
     return { context: sections.join('\n\n'), files };
+  }
+
+  /** Creates a git snapshot commit before the task starts so the user can rollback with git reset --hard HEAD~1 */
+  private async gitSnapshot(workingDir: string, task: string, onEvent: EventEmitter): Promise<void> {
+    try {
+      await execAsync('git rev-parse --git-dir', { cwd: workingDir, timeout: 3000 });
+      const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd: workingDir, timeout: 3000 });
+      if (!statusOut.trim()) return; // nothing to snapshot
+
+      const shortTask = task.slice(0, 60).replace(/['"\\]/g, '');
+      await execAsync(`git add -A && git commit -m "snapshot: ${shortTask}"`, {
+        cwd: workingDir,
+        timeout: 15_000,
+      });
+      const { stdout: hashOut } = await execAsync('git rev-parse --short HEAD', { cwd: workingDir, timeout: 3000 });
+      const fileCount = statusOut.trim().split('\n').length;
+      onEvent({ type: 'snapshot', hash: hashOut.trim(), files: fileCount });
+    } catch {
+      // Not a git repo or git unavailable — skip silently
+    }
+  }
+
+  /** Reads .selah/instructions.md — project-specific immutable rules for the agent */
+  private async readProjectInstructions(workingDir: string): Promise<string | null> {
+    try {
+      const content = await fs.readFile(path.join(workingDir, '.selah', 'instructions.md'), 'utf-8');
+      return content.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Extracts identifiers from the task and greps the codebase to find relevant files */
+  private async findRelevantFiles(task: string, workingDir: string, alreadyIncluded: Set<string>): Promise<Array<{ rel: string; content: string }>> {
+    // Extract PascalCase identifiers and NestJS-suffixed names likely to appear in code
+    const matches = task.match(/\b[A-Z][a-zA-Z0-9]*(?:Service|Controller|Module|Guard|Repository|Entity|Resolver|Interceptor|Pipe|Component|Store|DTO)?\b/g) || [];
+    const keywords = [...new Set(matches)].filter((k) => k.length > 3).slice(0, 6);
+    if (keywords.length === 0) return [];
+
+    const foundFiles = new Set<string>();
+    for (const kw of keywords) {
+      try {
+        const { stdout } = await execAsync(
+          `grep -rl "${kw}" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.angular . 2>/dev/null | head -6`,
+          { cwd: workingDir, timeout: 6000 },
+        );
+        stdout.trim().split('\n').filter(Boolean).forEach((f) => {
+          const rel = f.replace(/^\.\//, '');
+          if (!alreadyIncluded.has(rel)) foundFiles.add(rel);
+        });
+      } catch { /* grep found nothing */ }
+    }
+
+    const result: Array<{ rel: string; content: string }> = [];
+    for (const rel of Array.from(foundFiles).slice(0, 5)) {
+      try {
+        const raw = await fs.readFile(path.join(workingDir, rel), 'utf-8');
+        if (raw.length > 6000) continue; // skip very large files
+        const ext = rel.split('.').pop() || '';
+        result.push({ rel, content: `## ${rel}\n\`\`\`${ext}\n${raw}\n\`\`\`` });
+      } catch { /* file vanished — skip */ }
+    }
+    return result;
   }
 
   private async readProjectMemory(workingDir: string): Promise<string | null> {
@@ -306,7 +535,7 @@ export class SelahCoderAgentService {
     }
   }
 
-  private buildSystemPrompt(workingDir: string, memory: string | null): string {
+  private buildSystemPrompt(workingDir: string, memory: string | null, instructions: string | null = null): string {
     const memoryBlock = memory
       ? `\n════════════════════════════════════════
 PROJECT MEMORY  (.selah/memory.md)
@@ -324,11 +553,21 @@ No memory file found (.selah/memory.md does not exist yet).
 After completing this task, create .selah/memory.md to record the project context.
 ════════════════════════════════════════\n`;
 
+    const instructionsBlock = instructions
+      ? `\n════════════════════════════════════════
+PROJECT INSTRUCTIONS  (.selah/instructions.md)
+════════════════════════════════════════
+${instructions}
+════════════════════════════════════════
+These are IMMUTABLE project rules. Follow them always, even if they conflict with general conventions.
+════════════════════════════════════════\n`
+      : '';
+
     return `You are a senior software engineer with full access to the local filesystem, shell, and git. You write production-quality code in any language or framework.
 
 Working directory: ${workingDir}
 Date: ${new Date().toISOString().split('T')[0]}
-${memoryBlock}
+${memoryBlock}${instructionsBlock}
 
 ════════════════════════════════════════
 TOOLS
