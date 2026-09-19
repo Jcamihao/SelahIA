@@ -1,8 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { LumenModule } from './adapters/lumen/lumen.module';
 import { PraiseAppModule } from './adapters/praiseapp/praiseapp.module';
-import { VeloModule } from './adapters/velo/velo.module';
-import { SelahCoderModule } from './adapters/selah-coder/selah-coder.module';
 import { HealthModule } from './health/health.module';
 import { ProvidersModule } from './providers/providers.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
@@ -17,8 +15,6 @@ import { RequestLoggingMiddleware } from './common/logging/request-logging.middl
     CapabilitiesModule,
     LumenModule,
     PraiseAppModule,
-    VeloModule,
-    SelahCoderModule,
   ],
 })
 export class AppModule implements NestModule {
