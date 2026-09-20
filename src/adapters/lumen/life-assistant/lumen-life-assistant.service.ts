@@ -8,6 +8,7 @@ import {
   LumenLifeAssistantResponse,
   validateLumenLifeAssistantResponse,
 } from './lumen-life-assistant.schemas';
+import { resolveActiveProviderLabel } from '../../../providers/provider-selection';
 
 @Injectable()
 export class LumenLifeAssistantService {
@@ -67,7 +68,10 @@ export class LumenLifeAssistantService {
     private readonly requestContext: RequestContextService,
   ) {}
 
-  private responseMeta(model: string, provider = 'ollama') {
+  private responseMeta(
+    model: string,
+    provider = resolveActiveProviderLabel(),
+  ) {
     return {
       provider,
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',

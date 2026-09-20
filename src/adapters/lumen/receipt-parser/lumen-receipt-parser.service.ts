@@ -8,6 +8,7 @@ import {
   LumenReceiptParseResponse,
   validateLumenReceiptParseResponse,
 } from './lumen-receipt-parser.schemas';
+import { resolveActiveProviderLabel } from '../../../providers/provider-selection';
 
 @Injectable()
 export class LumenReceiptParserService {
@@ -20,7 +21,7 @@ export class LumenReceiptParserService {
 
   private responseMeta(model: string) {
     return {
-      provider: 'ollama',
+      provider: resolveActiveProviderLabel(),
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',
       model,
       generatedAt: new Date().toISOString(),

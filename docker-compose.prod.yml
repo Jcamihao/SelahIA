@@ -1,0 +1,12 @@
+services:
+  selah-ia:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3010
+      NODE_ENV: production
+    ports:
+      - '127.0.0.1:${SELAH_HOST_PORT:-3020}:3010'

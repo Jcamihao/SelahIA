@@ -13,6 +13,7 @@ import {
   buildChurchHealthPrompt,
   buildServiceReportsMonthlySummaryPrompt,
 } from './service-reports-ai.prompt';
+import { resolveActiveProviderLabel } from '../../../providers/provider-selection';
 
 @Injectable()
 export class ServiceReportsAiService {
@@ -25,7 +26,7 @@ export class ServiceReportsAiService {
 
   private responseMeta(model: string) {
     return {
-      provider: 'ollama',
+      provider: resolveActiveProviderLabel(),
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',
       model,
       generatedAt: new Date().toISOString(),

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { GeminiProvider } from './gemini/gemini.provider';
 import { OllamaProvider } from './ollama/ollama.provider';
 import { LLM_PROVIDER_TOKEN } from './provider.tokens';
+import { resolveActiveLlmProvider } from './provider-selection';
 
 @Module({
   providers: [
@@ -10,10 +11,7 @@ import { LLM_PROVIDER_TOKEN } from './provider.tokens';
     {
       provide: LLM_PROVIDER_TOKEN,
       useFactory: (ollama: OllamaProvider, gemini: GeminiProvider) => {
-        const selected = String(process.env.LLM_PROVIDER || 'ollama')
-          .trim()
-          .toLowerCase();
-        return selected === 'gemini' ? gemini : ollama;
+        return resolveActiveLlmProvider() === 'gemini' ? gemini : ollama;
       },
       inject: [OllamaProvider, GeminiProvider],
     },

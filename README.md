@@ -5,14 +5,14 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.1.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.2.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
-  <img src="https://img.shields.io/badge/Provider-Ollama%20%7C%20Gemini-0ea5e9" alt="Provider" />
+  <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
 </p>
 
 # 🤖 Selah IA
-Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM plugável — Ollama ou Gemini — + capabilities de geração de texto/JSON estruturado).
+Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM plugável — Gemini por padrão, ou Ollama — + capabilities de geração de texto/JSON estruturado).
 
 ## ✨ Visão rápida
 
@@ -36,9 +36,9 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 - Capabilities reutilizáveis para outros SaaS internos.
 
 ### 🔌 2) Provider atual
-- Selecionável via `LLM_PROVIDER` (`ollama` ou `gemini`), padrão `ollama`.
-- `Ollama` (local/self-hosted), modelo padrão `gemma4:e4b`. Suporte a chat com histórico de mensagens, tool calling e imagens inline.
+- Selecionável via `LLM_PROVIDER` (`gemini` ou `ollama`), **padrão `gemini`**.
 - `Gemini` (Google AI Studio, free tier disponível), modelo padrão `gemini-2.5-flash`.
+- `Ollama` (local/self-hosted, só com `LLM_PROVIDER=ollama`), modelo padrão `gemma4:e4b`. Suporte a chat com histórico de mensagens, tool calling e imagens inline.
 
 ### ⛪ 3) Adaptadores ativos
 - **PraiseApp:** Kids, Louvor, Consolidação e Saúde Ministerial.
@@ -47,7 +47,7 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 ## 🧱 Stack
 
 - NestJS 10
-- Ollama (provider LLM local) ou Gemini (provider hospedado, via `LLM_PROVIDER=gemini`)
+- Gemini (provider padrão, hospedado) ou Ollama (provider local, via `LLM_PROVIDER=ollama`)
 - Axios
 - Class Validator / Class Transformer
 - Jest
@@ -62,20 +62,20 @@ cp .env.example .env
 
 2. Configure obrigatoriamente:
 - `SELAH_INTERNAL_API_KEYS`
-- `OLLAMA_BASE_URL` (se `LLM_PROVIDER=ollama`, o padrão) ou `GEMINI_API_KEY` (se `LLM_PROVIDER=gemini`)
+- `GEMINI_API_KEY` (provider padrão) ou `OLLAMA_BASE_URL` (se `LLM_PROVIDER=ollama`)
 
 3. Variáveis principais:
 - `PORT=3010`
 - `SELAH_DEFAULT_LOCALE=pt-BR`
 - `SELAH_PUBLIC_VERSION=v1`
 - `SELAH_ALLOWED_SOURCE_APPS=PraiseAppBack,LumenBack`
-- `LLM_PROVIDER=ollama` (ou `gemini`)
-- `OLLAMA_BASE_URL=http://localhost:11434`
-- `OLLAMA_MODEL=gemma4:e4b`
-- `OLLAMA_TIMEOUT_MS=120000`
-- `GEMINI_API_KEY=` (só quando `LLM_PROVIDER=gemini`)
+- `LLM_PROVIDER=gemini` (padrão; ou `ollama`)
+- `GEMINI_API_KEY=`
 - `GEMINI_MODEL=gemini-2.5-flash`
 - `GEMINI_TIMEOUT_MS=45000`
+- `OLLAMA_BASE_URL=http://localhost:11434` (só com `LLM_PROVIDER=ollama`)
+- `OLLAMA_MODEL=gemma4:e4b`
+- `OLLAMA_TIMEOUT_MS=120000`
 
 ## 🚀 Como executar
 
@@ -146,6 +146,7 @@ src/
 
 ## 📌 Documentação complementar
 
+- 📝 Release notes 2.2.0: `docs/releases/v2.2.0.md`
 - 📝 Release notes 2.0.0: `docs/releases/v2.0.0.md`
 - 📝 Release notes 1.3.0: `docs/releases/v1.3.0.md`
 - 📝 Release notes 1.2.0: `docs/releases/v1.2.0.md`

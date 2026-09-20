@@ -125,7 +125,7 @@ describe('LumenLifeAssistantService', () => {
     const result = await service.chat(baseInput);
 
     expect(generate).toHaveBeenCalledTimes(2);
-    expect(result.provider).toBe('ollama');
+    expect(result.provider).toBe('gemini-developer-api');
     expect(result.answer).toContain('15mil');
     expect(result.suggestedActions[0]).toContain('credor');
   });

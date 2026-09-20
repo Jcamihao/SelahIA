@@ -1,22 +1,16 @@
 import { Controller, Get } from '@nestjs/common';
+import {
+  resolveActiveLlmProvider,
+  resolveActiveProviderLabel,
+} from '../providers/provider-selection';
 
-const resolveActiveProvider = () => {
-  const selected = String(process.env.LLM_PROVIDER || 'ollama')
-    .trim()
-    .toLowerCase();
-
-  if (selected === 'gemini') {
-    return {
-      provider: 'gemini-developer-api',
-      model: String(process.env.GEMINI_MODEL || 'gemini-2.5-flash'),
-    };
-  }
-
-  return {
-    provider: 'ollama',
-    model: String(process.env.OLLAMA_MODEL || 'gemma4:e4b'),
-  };
-};
+const resolveActiveProvider = () => ({
+  provider: resolveActiveProviderLabel(),
+  model:
+    resolveActiveLlmProvider() === 'gemini'
+      ? String(process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+      : String(process.env.OLLAMA_MODEL || 'gemma4:e4b'),
+});
 
 @Controller()
 export class HealthController {

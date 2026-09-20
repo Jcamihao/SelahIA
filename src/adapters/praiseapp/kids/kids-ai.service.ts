@@ -45,6 +45,7 @@ import { GeneratePraiseAppKidsOperationalAssistantDto } from './dto/generate-pra
 import { GeneratePraiseAppKidsAgeAdaptationsDto } from './dto/generate-praiseapp-kids-age-adaptations.dto';
 import { GeneratePraiseAppKidsPostClassCommunicationDto } from './dto/generate-praiseapp-kids-post-class-communication.dto';
 import { GeneratePraiseAppKidsEventSuggestionDto } from './dto/generate-praiseapp-kids-event-suggestion.dto';
+import { resolveActiveProviderLabel } from '../../../providers/provider-selection';
 
 @Injectable()
 export class KidsAiService {
@@ -57,7 +58,7 @@ export class KidsAiService {
 
   private responseMeta(model: string) {
     return {
-      provider: 'ollama',
+      provider: resolveActiveProviderLabel(),
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',
       model,
       generatedAt: new Date().toISOString(),
