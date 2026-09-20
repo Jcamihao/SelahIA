@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.2.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.3.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -72,7 +72,8 @@ cp .env.example .env
 - `LLM_PROVIDER=gemini` (padrão; ou `ollama`)
 - `GEMINI_API_KEY=`
 - `GEMINI_MODEL=gemini-2.5-flash`
-- `GEMINI_TIMEOUT_MS=45000`
+- `GEMINI_TIMEOUT_MS=45000` (orçamento total por chamada, inclui retries)
+- `GEMINI_MAX_RETRIES=2` / `GEMINI_RETRY_BASE_MS=800` / `GEMINI_RETRY_MAX_DELAY_MS=8000` (retry com backoff exponencial + jitter só em 429, 5xx e erro de rede; respeita `Retry-After`)
 - `OLLAMA_BASE_URL=http://localhost:11434` (só com `LLM_PROVIDER=ollama`)
 - `OLLAMA_MODEL=gemma4:e4b`
 - `OLLAMA_TIMEOUT_MS=120000`
@@ -146,6 +147,7 @@ src/
 
 ## 📌 Documentação complementar
 
+- 📝 Release notes 2.3.0: `docs/releases/v2.3.0.md`
 - 📝 Release notes 2.2.0: `docs/releases/v2.2.0.md`
 - 📝 Release notes 2.0.0: `docs/releases/v2.0.0.md`
 - 📝 Release notes 1.3.0: `docs/releases/v1.3.0.md`

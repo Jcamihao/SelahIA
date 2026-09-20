@@ -60,10 +60,16 @@ export const WORSHIP_REHEARSAL_NOTES_SCHEMA = {
   additionalProperties: false,
 };
 
-export function validateWorshipSetlistSuggestion(data: any): data is WorshipSetlistSuggestion {
-  return !!data && Array.isArray(data.suggestions) && typeof data.flowInsight === 'string';
+export function validateWorshipSetlistSuggestion(data: any): WorshipSetlistSuggestion {
+  if (!data || !Array.isArray(data.suggestions) || typeof data.flowInsight !== 'string') {
+    throw new Error('Resposta da IA inválida para sugestão de setlist.');
+  }
+  return data as WorshipSetlistSuggestion;
 }
 
-export function validateWorshipRehearsalNotes(data: any): data is WorshipRehearsalNotes {
-  return !!data && Array.isArray(data.sections) && typeof data.overallDynamics === 'string';
+export function validateWorshipRehearsalNotes(data: any): WorshipRehearsalNotes {
+  if (!data || !Array.isArray(data.sections) || typeof data.overallDynamics !== 'string') {
+    throw new Error('Resposta da IA inválida para notas de ensaio.');
+  }
+  return data as WorshipRehearsalNotes;
 }

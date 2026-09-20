@@ -49,10 +49,16 @@ export const CONSOLIDATION_PLAYBOOK_SCHEMA = {
   additionalProperties: false,
 };
 
-export function validateConsolidationSentiment(data: any): data is ConsolidationSentiment {
-  return !!data && typeof data.sentiment === 'string' && typeof data.score === 'number';
+export function validateConsolidationSentiment(data: any): ConsolidationSentiment {
+  if (!data || typeof data.sentiment !== 'string' || typeof data.score !== 'number') {
+    throw new Error('Resposta da IA inválida para análise de sentimento da consolidação.');
+  }
+  return data as ConsolidationSentiment;
 }
 
-export function validateConsolidationPlaybook(data: any): data is ConsolidationPlaybook {
-  return !!data && Array.isArray(data.weeks) && typeof data.personalizedInsights === 'string';
+export function validateConsolidationPlaybook(data: any): ConsolidationPlaybook {
+  if (!data || !Array.isArray(data.weeks) || typeof data.personalizedInsights !== 'string') {
+    throw new Error('Resposta da IA inválida para playbook de consolidação.');
+  }
+  return data as ConsolidationPlaybook;
 }
