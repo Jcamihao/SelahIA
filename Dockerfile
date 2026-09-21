@@ -18,6 +18,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
+USER node
+
 EXPOSE 3010
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

@@ -2,6 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { json, urlencoded } from 'express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function loadEnvironment() {
@@ -20,20 +21,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+  // API servidor-a-servidor: nenhum navegador fala com o Selah, entao nao ha CORS.
+  app.use(helmet());
   app.use(json({ limit: bodySizeLimit }));
   app.use(urlencoded({ extended: true, limit: bodySizeLimit }));
-  app.enableCors({
-    origin: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Accept',
-      'X-Requested-With',
-      'X-Selah-Api-Key',
-      'X-Source-App',
-      'X-Request-Id',
-    ],
-  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

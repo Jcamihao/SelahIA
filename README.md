@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.3.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.4.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -116,13 +116,24 @@ npm test -- --runInBand
 
 O `SelahIA` usa autenticação entre serviços com:
 
-- `X-Selah-Api-Key`
-- `X-Source-App`
+- `X-Selah-Api-Key` (obrigatório)
+- `X-Source-App` (informativo quando a chave é por app)
 - `X-Request-Id` opcional
 
 Regra operacional:
 - o frontend nunca fala direto com o `SelahIA`
 - o backend do SaaS autentica, monta contexto e decide o que persiste
+
+### Chave por app
+Cada app consumidor tem a sua chave em `SELAH_APP_KEYS=LumenBack:<chave>,PraiseAppBack:<chave>` (gere com `openssl rand -hex 32`).
+- **A identidade do app vem da chave**, não do header. Um app não consegue se passar por outro mudando o `X-Source-App`.
+- Revogar um app = remover a chave dele; os outros não são afetados.
+- Rotação sem downtime: liste duas chaves do mesmo app, atualize o app e remova a antiga.
+- O Selah recusa subir se a mesma chave estiver em dois apps, se a entrada for malformada, ou se usar a chave `selah-dev-key` em produção.
+- `SELAH_INTERNAL_API_KEYS` (legado) continua aceita para migração, mas não identifica o app. Remova em produção depois de migrar.
+
+### Rate limit
+Limite por app, em requisições por minuto (token bucket, rajada até o limite): `SELAH_RATE_LIMIT_PER_MINUTE` (padrão 60, `0` desliga) e `SELAH_RATE_LIMITS=LumenBack:120,PraiseAppBack:30` para sobrescrever por app. Ao exceder, o Selah responde `429` com `Retry-After`. Ajuste o valor para não passar da cota do seu plano do Gemini. O contador fica em memória (uma instância); o `deploy/nginx/selah.conf` traz uma proteção adicional por IP.
 
 ## 🧭 Estrutura principal
 
@@ -147,6 +158,7 @@ src/
 
 ## 📌 Documentação complementar
 
+- 📝 Release notes 2.4.0: `docs/releases/v2.4.0.md`
 - 📝 Release notes 2.3.0: `docs/releases/v2.3.0.md`
 - 📝 Release notes 2.2.0: `docs/releases/v2.2.0.md`
 - 📝 Release notes 2.0.0: `docs/releases/v2.0.0.md`

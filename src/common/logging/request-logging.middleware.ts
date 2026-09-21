@@ -44,7 +44,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
 
         const durationMs = Date.now() - startedAt;
         const status = Number(response.statusCode || 0);
-        const baseMessage = `[${requestId}] <-- ${method} ${path} status=${status} durationMs=${durationMs} source=${sourceApp} event=${event}`;
+        const baseMessage = `[${requestId}] <-- ${method} ${path} status=${status} durationMs=${durationMs} source=${context.sourceApp} event=${event}`;
 
         if (status >= 500) {
           this.logger.error(baseMessage);

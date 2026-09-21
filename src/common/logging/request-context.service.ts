@@ -25,6 +25,13 @@ export class RequestContextService {
     return this.get()?.requestId || 'n/a';
   }
 
+  setSourceApp(sourceApp: string) {
+    const store = this.get();
+    if (store) {
+      store.sourceApp = sourceApp;
+    }
+  }
+
   getSourceApp() {
     return this.get()?.sourceApp || 'unknown';
   }
