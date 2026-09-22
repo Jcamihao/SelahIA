@@ -9,6 +9,12 @@ import {
   validateLumenLifeAssistantResponse,
 } from './lumen-life-assistant.schemas';
 import { resolveActiveProviderLabel } from '../../../providers/provider-selection';
+import {
+  extractMoneySignals,
+  isDebtQuestion,
+  isFinancialGuidanceQuestion,
+  isPersonalGuidanceQuestion,
+} from './lumen-life-assistant.classification';
 
 @Injectable()
 export class LumenLifeAssistantService {
@@ -54,15 +60,6 @@ export class LumenLifeAssistantService {
     'congel',
     'aport',
   ];
-  private readonly debtQuestionPattern =
-    /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest)\b/i;
-  private readonly financialGuidancePattern =
-    /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest|orcament|or[çc]amento|gasto|despesa|econom|renda|sal[aá]rio|boleto|conta|reserva|caixa|invest)\b/i;
-  private readonly personalGuidancePattern =
-    /\b(rotina|vida pessoal|cansa[cç]|ansied|foco|procrast|disciplina|h[aá]bito|organiza|emocional|energia|sono|estresse|estres|travad|desanim|produtividade|const[aâ]ncia)\b/i;
-  private readonly moneySignalPattern =
-    /(?:r\$\s*)?\d{1,3}(?:\.\d{3})*(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?|(?:r\$\s*)?\d+(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?/gi;
-
   constructor(
     private readonly structuredOutputService: StructuredOutputService,
     private readonly requestContext: RequestContextService,
@@ -93,7 +90,7 @@ export class LumenLifeAssistantService {
     const requestId = this.requestContext.getRequestId();
 
     this.logger.log(
-      `[${requestId}] Lumen life assistant started user="${String(input.user.name || '').trim() || 'unknown'}" questionLength=${String(input.message || '').trim().length} tasksToday=${input.tasksTodayCount} overdue=${input.tasksOverdueCount} risk=${String(input.forecast.riskLevel || 'n/a').trim()}`,
+      `[${requestId}] Lumen life assistant started questionLength=${String(input.message || '').trim().length} tasksToday=${input.tasksTodayCount} overdue=${input.tasksOverdueCount} risk=${String(input.forecast.riskLevel || 'n/a').trim()}`,
     );
 
     let result = await this.generateAssistantCard(input);
@@ -142,7 +139,7 @@ export class LumenLifeAssistantService {
     }
 
     this.logger.log(
-      `[${requestId}] Lumen life assistant completed focus="${result.data.focusArea}" confidence=${result.data.confidence} highlights=${result.data.highlights.length} actions=${result.data.suggestedActions.length}`,
+      `[${requestId}] Lumen life assistant completed confidence=${result.data.confidence} highlights=${result.data.highlights.length} actions=${result.data.suggestedActions.length}`,
     );
 
     return {
@@ -210,14 +207,14 @@ export class LumenLifeAssistantService {
     const hasMonetarySignal =
       /r\$/i.test([response.answer, ...response.highlights].join(' ')) ||
       /\d/.test(response.answer);
-    const isDebtQuestion = this.isDebtQuestion(input.message);
-    const isFinancialGuidance = this.isFinancialGuidanceQuestion(input);
-    const isPersonalGuidance = this.isPersonalGuidanceQuestion(input.message);
+    const isDebtGuidance = isDebtQuestion(input.message);
+    const isFinancialGuidance = isFinancialGuidanceQuestion(input);
+    const isPersonalGuidance = isPersonalGuidanceQuestion(input.message);
     const mentionsDebtTerms =
       /\b(divid|negoci|juros|parcela|credor|atraso|acordo|renegoci)\b/.test(
         combined,
       );
-    const monetaryQuestionSignals = this.extractMoneySignals(input.message);
+    const monetaryQuestionSignals = extractMoneySignals(input.message);
     const monetaryQuestionMatches = monetaryQuestionSignals.filter((signal) =>
       combined.includes(this.toSearchableText(signal)),
     ).length;
@@ -252,7 +249,7 @@ export class LumenLifeAssistantService {
       return true;
     }
 
-    if (isDebtQuestion) {
+    if (isDebtGuidance) {
       if (!mentionsDebtTerms) {
         return true;
       }
@@ -277,7 +274,7 @@ export class LumenLifeAssistantService {
       return true;
     }
 
-    if ((isFinancialGuidance || isDebtQuestion) && actionVerbMatches < 2) {
+    if ((isFinancialGuidance || isDebtGuidance) && actionVerbMatches < 2) {
       return true;
     }
 
@@ -336,11 +333,11 @@ export class LumenLifeAssistantService {
   private collectQuestionAnchors(input: GenerateLumenLifeAssistantResponseDto) {
     return [
       ...(input.matchedQuestionTargets || []),
-      ...this.extractMoneySignals(input.message),
-      ...(this.isDebtQuestion(input.message)
+      ...extractMoneySignals(input.message),
+      ...(isDebtQuestion(input.message)
         ? ['divida', 'juros', 'negociacao']
         : []),
-      ...(this.isPersonalGuidanceQuestion(input.message)
+      ...(isPersonalGuidanceQuestion(input.message)
         ? ['rotina', 'vida pessoal', 'energia']
         : []),
     ]
@@ -380,9 +377,9 @@ export class LumenLifeAssistantService {
       candidateValues.length
         ? `Valores concretos disponíveis: ${candidateValues.join('; ')}.`
         : 'Se houver valor financeiro relevante, cite o número exato.',
-      this.isDebtQuestion(input.message)
+      isDebtQuestion(input.message)
         ? 'A resposta precisa explicar como quitar ou renegociar sem sacrificar o básico da vida.'
-        : this.isPersonalGuidanceQuestion(input.message)
+        : isPersonalGuidanceQuestion(input.message)
           ? 'A resposta precisa soar como orientação prática de vida pessoal, não como panorama institucional.'
           : 'A resposta precisa entregar um plano curto, não uma mensagem motivacional genérica.',
       'Reescreva com mais especificidade e menos abstração.',
@@ -392,15 +389,15 @@ export class LumenLifeAssistantService {
   private buildRuleBasedFallback(
     input: GenerateLumenLifeAssistantResponseDto,
   ): LumenLifeAssistantResponse | null {
-    if (this.isDebtQuestion(input.message)) {
+    if (isDebtQuestion(input.message)) {
       return this.buildDebtGuidanceFallback(input);
     }
 
-    if (this.isFinancialGuidanceQuestion(input)) {
+    if (isFinancialGuidanceQuestion(input)) {
       return this.buildFinancialGuidanceFallback(input);
     }
 
-    if (this.isPersonalGuidanceQuestion(input.message)) {
+    if (isPersonalGuidanceQuestion(input.message)) {
       return this.buildPersonalGuidanceFallback(input);
     }
 
@@ -410,7 +407,7 @@ export class LumenLifeAssistantService {
   private buildDebtGuidanceFallback(
     input: GenerateLumenLifeAssistantResponseDto,
   ): LumenLifeAssistantResponse {
-    const amount = this.extractMoneySignals(input.message)[0] || null;
+    const amount = extractMoneySignals(input.message)[0] || null;
     const balance = this.formatCurrency(
       Number(input.currentBalance || 0),
       input.user.preferredCurrency,
@@ -529,32 +526,6 @@ export class LumenLifeAssistantService {
     return String(message || '')
       .split(/[.!?]/)[0]
       .trim();
-  }
-
-  private isDebtQuestion(message: string) {
-    return this.debtQuestionPattern.test(String(message || ''));
-  }
-
-  private isFinancialGuidanceQuestion(
-    input: GenerateLumenLifeAssistantResponseDto,
-  ) {
-    return (
-      input.intent === 'finance_overview' ||
-      this.financialGuidancePattern.test(String(input.message || ''))
-    );
-  }
-
-  private isPersonalGuidanceQuestion(message: string) {
-    return this.personalGuidancePattern.test(String(message || ''));
-  }
-
-  private extractMoneySignals(message: string) {
-    const matches = String(message || '').match(this.moneySignalPattern) || [];
-    const normalized = matches
-      .map((item) => item.replace(/\s+/g, ' ').trim())
-      .filter(Boolean);
-
-    return Array.from(new Set(normalized)).slice(0, 3);
   }
 
   private formatCurrency(amount: number, currency: string) {

@@ -92,7 +92,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids lesson generation completed title="${result.data.suggestedTitle}" flowSteps=${result.data.lessonFlow.length} supplies=${result.data.supplies.length}`,
+      `[${requestId}] Kids lesson generation completed flowSteps=${result.data.lessonFlow.length} supplies=${result.data.supplies.length}`,
     );
 
     return {
@@ -128,7 +128,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids daily summary completed headline="${result.data.headline}" attentionLevel=${result.data.attentionLevel}`,
+      `[${requestId}] Kids daily summary completed attentionLevel=${result.data.attentionLevel}`,
     );
 
     return {
@@ -164,7 +164,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids next sequence completed title="${result.data.suggestedTitle}" reference="${result.data.biblicalReference}"`,
+      `[${requestId}] Kids next sequence completed balanceNotes=${result.data.balanceNotes.length}`,
     );
 
     return {
@@ -200,7 +200,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids weekly verse expansion completed phrase="${result.data.parentPhrase}"`,
+      `[${requestId}] Kids weekly verse expansion completed`,
     );
 
     return {
@@ -220,7 +220,7 @@ export class KidsAiService {
   }> {
     const requestId = this.requestContext.getRequestId();
     this.logger.log(
-      `[${requestId}] Kids operational assistant started context="${String(input.operationalContext || '').trim().slice(0, 120)}" desiredDuration=${Number(input.desiredDurationMin || 0) || 'n/a'}`,
+      `[${requestId}] Kids operational assistant started contextChars=${String(input.operationalContext || '').trim().length} desiredDuration=${Number(input.desiredDurationMin || 0) || 'n/a'}`,
     );
 
     const result = await this.structuredOutputService.generate({
@@ -272,7 +272,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids age adaptations completed versions=${result.data.versions.length} baseReference="${result.data.baseReference}"`,
+      `[${requestId}] Kids age adaptations completed versions=${result.data.versions.length}`,
     );
 
     return {
@@ -293,7 +293,7 @@ export class KidsAiService {
     const requestId = this.requestContext.getRequestId();
     const lessonPlan = input.lessonPlan || {};
     this.logger.log(
-      `[${requestId}] Kids post-class communication started title="${String((lessonPlan as Record<string, unknown>)?.suggestedTitle || (lessonPlan as Record<string, unknown>)?.nomeAula || '').trim()}" reference="${String((lessonPlan as Record<string, unknown>)?.biblicalReference || (lessonPlan as Record<string, unknown>)?.textoBase || '').trim()}"`,
+      `[${requestId}] Kids post-class communication started reference="${String((lessonPlan as Record<string, unknown>)?.biblicalReference || (lessonPlan as Record<string, unknown>)?.textoBase || '').trim()}"`,
     );
 
     const result = await this.structuredOutputService.generate({
@@ -309,7 +309,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids post-class communication completed noticeTitle="${result.data.suggestedNoticeTitle}"`,
+      `[${requestId}] Kids post-class communication completed`,
     );
 
     return {
@@ -329,7 +329,7 @@ export class KidsAiService {
   }> {
     const requestId = this.requestContext.getRequestId();
     this.logger.log(
-      `[${requestId}] Kids event suggestion started theme="${String(input.theme || '').trim()}" date="${String(input.eventDate || '').trim()}" audience="${String(input.targetAudience || '').trim()}"`,
+      `[${requestId}] Kids event suggestion started themeChars=${String(input.theme || '').trim().length} date="${String(input.eventDate || '').trim()}" audienceChars=${String(input.targetAudience || '').trim().length}`,
     );
 
     const result = await this.structuredOutputService.generate({
@@ -345,7 +345,7 @@ export class KidsAiService {
     });
 
     this.logger.log(
-      `[${requestId}] Kids event suggestion completed title="${result.data.suggestedTitle}" checklist=${result.data.checklist.length} flow=${result.data.programFlow.length}`,
+      `[${requestId}] Kids event suggestion completed checklist=${result.data.checklist.length} flow=${result.data.programFlow.length}`,
     );
 
     return {

@@ -96,12 +96,12 @@ Regras obrigatorias:
 - Preferir data em formato ISO yyyy-mm-dd quando possivel.
 - Normalizar valores monetarios como numero decimal, sem simbolo de moeda.
 - quantity deve ser numerica. Quando a quantidade nao estiver explicita, use 1.
-- totalPrice de cada item deve refletir o total visivel do item ou, se so houver unitario e quantidade, o valor calculado.
-- unitPrice pode ser null se a imagem nao permitir inferencia confiavel.
+- total de cada item deve refletir o total visivel do item ou, se so houver unitario e quantidade, o valor calculado.
+- unit pode ser null se a imagem nao permitir inferencia confiavel.
 - category deve ser uma sugestao curta em pt-BR como Alimentacao, Limpeza, Bebidas, Hortifruti, Higiene, Farmacia, Pet, Bebes, Casa, Eletronicos, Vestuario, Servicos ou null.
 - confidence deve refletir a qualidade geral da leitura da nota.
 - notes deve listar ambiguidades importantes, divergencia entre soma dos itens e total, ou campos ausentes relevantes.
-- rawTextExcerpt deve trazer um trecho curto do texto reconhecido, sem markdown, quando isso ajudar na auditoria.
+- rawText deve trazer um trecho curto do texto reconhecido, sem markdown, quando isso ajudar na auditoria.
 - purchaseSummary deve ser curto, claro e fiel ao que aparece na compra, sem inventar contexto externo.
 - spendingSignals e followUpActions devem ser pragmáticos e úteis para controle financeiro, nunca genéricos demais.
 - Foque em notas fiscais e cupons brasileiros, inclusive supermercados, farmacias e lojas.

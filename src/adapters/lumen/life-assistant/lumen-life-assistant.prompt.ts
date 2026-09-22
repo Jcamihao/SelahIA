@@ -1,16 +1,10 @@
 import { GenerateLumenLifeAssistantResponseDto } from './dto/generate-lumen-life-assistant-response.dto';
-
-const FINANCIAL_GUIDANCE_PATTERN =
-  /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest|orcament|or[çc]amento|gasto|despesa|econom|renda|sal[aá]rio|boleto|conta|reserva|caixa)\b/i;
-
-const DEBT_GUIDANCE_PATTERN =
-  /\b(divid|d[ií]vida|quitar|quitacao|quita[cç][aã]o|renegoci|negoci|juros|parcela|parcelamento|cart[aã]o|emprest)\b/i;
-
-const PERSONAL_GUIDANCE_PATTERN =
-  /\b(rotina|vida pessoal|cansa[cç]|ansied|foco|procrast|disciplina|h[aá]bito|organiza|emocional|energia|sono|estresse|estres|travad|desanim|produtividade|const[aâ]ncia)\b/i;
-
-const MONEY_SIGNAL_PATTERN =
-  /(?:r\$\s*)?\d{1,3}(?:\.\d{3})*(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?|(?:r\$\s*)?\d+(?:,\d{2})?\s*(?:mil|k|milh[aã]o|milh[oõ]es)?/gi;
+import {
+  DEBT_GUIDANCE_PATTERN,
+  FINANCIAL_GUIDANCE_PATTERN,
+  extractQuestionFacts,
+  isPersonalGuidanceQuestion,
+} from './lumen-life-assistant.classification';
 
 const listBlock = (title: string, items?: string[]) => {
   const normalizedItems = (items || [])
@@ -36,55 +30,22 @@ const inlineList = (items?: string[]) => {
   return normalizedItems.join('; ');
 };
 
-const extractQuestionFacts = (message: string) => {
-  const normalizedMessage = String(message || '').trim();
-
-  if (!normalizedMessage) {
-    return [];
-  }
-
-  const facts = new Set<string>();
-  const moneySignals = normalizedMessage.match(MONEY_SIGNAL_PATTERN) || [];
-
-  for (const signal of moneySignals) {
-    const cleaned = signal.replace(/\s+/g, ' ').trim();
-
-    if (cleaned) {
-      facts.add(cleaned);
-    }
-  }
-
-  if (DEBT_GUIDANCE_PATTERN.test(normalizedMessage)) {
-    facts.add('pedido de ajuda para quitar ou reorganizar dívida');
-  }
-
-  if (FINANCIAL_GUIDANCE_PATTERN.test(normalizedMessage)) {
-    facts.add('pedido de orientação financeira prática');
-  }
-
-  if (PERSONAL_GUIDANCE_PATTERN.test(normalizedMessage)) {
-    facts.add('pedido de orientação para vida pessoal ou rotina');
-  }
-
-  return Array.from(facts).slice(0, 5);
-};
-
 const classifyQuestion = (
   input: GenerateLumenLifeAssistantResponseDto,
   questionFacts: string[],
 ) => {
   const message = String(input.message || '').trim();
   const normalizedMessage = message.toLowerCase();
-  const isDebtQuestion = DEBT_GUIDANCE_PATTERN.test(message);
+  const isDebtGuidance = DEBT_GUIDANCE_PATTERN.test(message);
   const isFinancialGuidance =
-    isDebtQuestion ||
+    isDebtGuidance ||
     input.intent === 'finance_overview' ||
     FINANCIAL_GUIDANCE_PATTERN.test(message);
   const isPersonalGuidance =
-    PERSONAL_GUIDANCE_PATTERN.test(message) &&
+    isPersonalGuidanceQuestion(message) &&
     input.intent === 'general';
 
-  if (isDebtQuestion) {
+  if (isDebtGuidance) {
     return {
       label: 'quitação de dívida / reorganização financeira',
       rules: [
@@ -329,6 +290,14 @@ Regras obrigatórias:
   2. Um contexto curto explicando o porquê ou o risco principal.
   3. Highlights curtos e objetivos.
   4. Próximas ações em tom de orientação prática.
+
+Exemplo ilustrativo do nível de especificidade esperado (dados fictícios, não são do usuário atual — nunca copie nomes, valores ou frases deste exemplo, ele só mostra a densidade e o formato certos):
+- Pergunta de exemplo: "Tenho uma dívida de 8 mil no cartão, como quito sem comprometer o básico?"
+- Contexto de exemplo: tarefa aberta "Renegociar fatura antiga" com impacto financeiro estimado de R$ 500,00; saldo previsto R$ 900,00 com risco MEDIUM.
+- answer de exemplo: "Uma dívida de 8 mil pede prioridade agora: negocie primeiro a parte com juros mais altos e proteja moradia, alimentação, transporte, saúde e trabalho enquanto isso. A tarefa \\"Renegociar fatura antiga\\" (impacto estimado de R$ 500,00) é o ponto de partida para entender o tamanho real do problema antes de assumir qualquer parcela nova."
+- highlights de exemplo: ["Dívida citada pelo usuário: 8 mil.", "Tarefa aberta ligada ao problema: Renegociar fatura antiga (R$ 500,00).", "Saldo previsto: R$ 900,00 com risco MEDIUM."]
+- suggestedActions de exemplo: ["Conclua \\"Renegociar fatura antiga\\" hoje para mapear juros e parcelas.", "Negocie primeiro a dívida com maior juros ou já em atraso.", "Defina uma parcela mensal que caiba no orçamento sem tocar no básico.", "Registre qualquer negociação feita para acompanhar o progresso."]
+- Note como o exemplo cita a tarefa e os valores pelo nome exato, em vez de dizer "uma tarefa" ou "um valor alto". Gere a resposta real inteiramente a partir do contexto real enviado abaixo, nunca a partir deste exemplo.
 ${options?.tightenSpecificity ? `
 
 Correção obrigatória de especificidade:

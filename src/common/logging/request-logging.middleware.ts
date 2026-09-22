@@ -15,7 +15,11 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     const sourceApp =
       String(request.headers['x-source-app'] || '').trim() || 'unknown';
     const method = String(request.method || 'GET').toUpperCase();
-    const path = String(request.originalUrl || request.url || '/').trim() || '/';
+    // Sem query string: ela pode carregar dados do usuario.
+    const path =
+      String(request.originalUrl || request.url || '/')
+        .trim()
+        .split('?')[0] || '/';
     const startedAt = Date.now();
     const context = {
       requestId,

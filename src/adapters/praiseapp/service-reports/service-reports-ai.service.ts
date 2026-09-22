@@ -46,7 +46,7 @@ export class ServiceReportsAiService {
     const totalReports = (input.reports || []).length;
 
     this.logger.log(
-      `[${requestId}] Service reports monthly summary started month=${input.month}/${input.year} org="${String(input.orgName || '').trim() || 'n/a'}" reports=${totalReports}`,
+      `[${requestId}] Service reports monthly summary started month=${input.month}/${input.year} reports=${totalReports}`,
     );
 
     const prompt = buildServiceReportsMonthlySummaryPrompt(input);
@@ -75,7 +75,7 @@ export class ServiceReportsAiService {
 
   async analyzeHealth(input: any) {
     const requestId = this.requestContext.getRequestId();
-    this.logger.log(`[${requestId}] Church health analysis started org="${input.orgName}"`);
+    this.logger.log(`[${requestId}] Church health analysis started`);
 
     const prompt = buildChurchHealthPrompt(input);
 

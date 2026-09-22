@@ -56,7 +56,7 @@ export class LumenReceiptParserService {
     ];
 
     this.logger.log(
-      `[${requestId}] Lumen receipt parser started file="${String(input.fileName || '').trim() || 'unknown'}" mime=${String(input.mimeType || '').trim() || 'unknown'}`,
+      `[${requestId}] Lumen receipt parser started mime=${String(input.mimeType || '').trim() || 'unknown'}`,
     );
 
     const result = await this.llmProvider.generateTextFromContents({
@@ -114,7 +114,7 @@ export class LumenReceiptParserService {
     }
 
     this.logger.log(
-      `[${requestId}] Lumen receipt parser completed merchant="${data.merchantName || 'unknown'}" items=${data.items.length} confidence=${data.confidence} documentType=${data.documentType || 'unknown'} qr=${data.qrCodeDetected ? 'yes' : 'no'}`,
+      `[${requestId}] Lumen receipt parser completed merchant=${data.merchantName ? 'found' : 'missing'} items=${data.items.length} confidence=${data.confidence} documentType=${data.documentType || 'unknown'} qr=${data.qrCodeDetected ? 'yes' : 'no'}`,
     );
 
     return {

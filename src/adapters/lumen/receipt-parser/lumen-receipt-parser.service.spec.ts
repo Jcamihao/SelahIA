@@ -233,6 +233,21 @@ describe('buildLumenReceiptParserPrompt', () => {
     expect(prompt).toContain('Locale sugerido: pt-BR');
   });
 
+  it('regras de campo usam os mesmos nomes de chave do outputShape/schema, nunca os nomes internos pos-mapeamento', () => {
+    // Bug real corrigido em 2026-09-22: a prosa dizia "unitPrice"/"totalPrice"/"rawTextExcerpt"
+    // (nomes internos do TS, depois do mapeamento em lumen-receipt-parser.schemas.ts), mas a chave
+    // que o modelo de fato precisa emitir - a que outputShape mostra e o validator le - e
+    // "unit"/"total"/"rawText". Isso confundia o modelo sobre qual chave escrever.
+    const prompt = buildLumenReceiptParserPrompt(input as any);
+
+    expect(prompt).not.toContain('unitPrice');
+    expect(prompt).not.toContain('totalPrice');
+    expect(prompt).not.toContain('rawTextExcerpt');
+    expect(prompt).toContain('unit pode ser null');
+    expect(prompt).toContain('total de cada item deve refletir');
+    expect(prompt).toContain('rawText deve trazer um trecho curto');
+  });
+
   it('adds the re-read block only in merchant_items mode', () => {
     expect(buildLumenReceiptParserPrompt(input as any, 'merchant_items')).toContain(
       'Modo de releitura',

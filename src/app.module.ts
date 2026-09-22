@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { AgilisModule } from './adapters/agilis/agilis.module';
 import { LumenModule } from './adapters/lumen/lumen.module';
 import { PraiseAppModule } from './adapters/praiseapp/praiseapp.module';
 import { HealthModule } from './health/health.module';
@@ -15,6 +16,7 @@ import { RequestLoggingMiddleware } from './common/logging/request-logging.middl
     HealthModule,
     ProvidersModule,
     CapabilitiesModule,
+    AgilisModule,
     LumenModule,
     PraiseAppModule,
   ],
