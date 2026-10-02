@@ -6,7 +6,7 @@ import {
 
 // Espelha o contrato real dos providers: `data` e o retorno de `validate(parsed)`.
 const providerLikeStructuredOutput = (parsed: unknown) => ({
-  generate: jest.fn(async (input: any) => ({
+  generateStructured: jest.fn(async (input: any) => ({
     data: input.validate(parsed),
     model: 'test-model',
   })),

@@ -77,29 +77,6 @@ export class GeminiProvider implements LlmProvider {
 
   constructor(private readonly requestContext: RequestContextService) {}
 
-  async generateText(input: GenerateTextInput): Promise<GenerateTextResult> {
-    const model = this.resolveModel(input.model);
-    const response = await this.request(model, {
-      system_instruction: this.toSystemInstruction(input.systemInstruction),
-      contents: [
-        {
-          parts: [{ text: input.userPrompt }],
-        },
-      ],
-      generationConfig: this.toGenerationConfig(input),
-    }, {
-      mode: 'text',
-      promptChars: String(input.userPrompt || '').length,
-    });
-
-    const text = this.extractText(response);
-    return {
-      text,
-      model,
-      raw: response,
-    };
-  }
-
   async generateStructured<T>(
     input: StructuredGenerationInput<T>,
   ): Promise<StructuredGenerationResult<T>> {

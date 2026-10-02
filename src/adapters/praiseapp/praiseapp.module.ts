@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { CapabilitiesModule } from '../../capabilities/capabilities.module';
 import { KidsAiController } from './kids/kids-ai.controller';
 import { KidsAiService } from './kids/kids-ai.service';
 import { ServiceReportsAiController } from './service-reports/service-reports-ai.controller';
@@ -12,7 +11,7 @@ import { InternalApiKeyGuard } from '../../common/auth/internal-api-key.guard';
 import { ProvidersModule } from '../../providers/providers.module';
 
 @Module({
-  imports: [CapabilitiesModule, ProvidersModule],
+  imports: [ProvidersModule],
   controllers: [
     KidsAiController,
     ServiceReportsAiController,

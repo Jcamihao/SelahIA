@@ -61,7 +61,7 @@ const createService = (parsed: unknown) => {
     model: 'test-model',
   }));
   const service = new ServiceReportsAiService(
-    { generate } as any,
+    { generateStructured: generate } as any,
     { getRequestId: () => 'test-request' } as any,
   );
   return { service, generate };

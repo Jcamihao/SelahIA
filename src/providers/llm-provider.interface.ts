@@ -44,7 +44,6 @@ export type StructuredGenerationResult<T> = {
 };
 
 export interface LlmProvider {
-  generateText(input: GenerateTextInput): Promise<GenerateTextResult>;
   generateStructured<T>(
     input: StructuredGenerationInput<T>,
   ): Promise<StructuredGenerationResult<T>>;

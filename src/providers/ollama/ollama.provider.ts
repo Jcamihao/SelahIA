@@ -1,7 +1,6 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import {
-  GenerateTextInput,
   GenerateTextResult,
   LlmProvider,
   StructuredGenerationFromContentsInput,
@@ -49,18 +48,6 @@ export class OllamaProvider implements LlmProvider {
   });
 
   constructor(private readonly requestContext: RequestContextService) {}
-
-  async generateText(input: GenerateTextInput): Promise<GenerateTextResult> {
-    const model = this.resolveModel(input.model);
-    const messages = this.buildMessages(input.systemInstruction, input.userPrompt);
-    const content = await this.chat(
-      model,
-      messages,
-      { temperature: input.temperature, topP: input.topP, numPredict: input.maxOutputTokens },
-      { mode: 'text', promptChars: String(input.userPrompt || '').length },
-    );
-    return { text: content, model, raw: { content } };
-  }
 
   async generateStructured<T>(
     input: StructuredGenerationInput<T>,

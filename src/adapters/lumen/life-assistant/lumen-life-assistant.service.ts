@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { StructuredOutputService } from '../../../capabilities/structured-output/structured-output.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { LlmProvider } from '../../../providers/llm-provider.interface';
+import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { GenerateLumenLifeAssistantResponseDto } from './dto/generate-lumen-life-assistant-response.dto';
 import { buildLumenLifeAssistantPrompt } from './lumen-life-assistant.prompt';
@@ -61,7 +62,7 @@ export class LumenLifeAssistantService {
     'aport',
   ];
   constructor(
-    private readonly structuredOutputService: StructuredOutputService,
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
     private readonly requestContext: RequestContextService,
   ) {}
 
@@ -156,7 +157,7 @@ export class LumenLifeAssistantService {
       retryFeedback?: string;
     },
   ) {
-    return this.structuredOutputService.generate({
+    return this.llmProvider.generateStructured({
       userPrompt: buildLumenLifeAssistantPrompt(input, options),
       systemInstruction:
         'Você é Selah IA, o motor oficial do assistente de vida do LUMEN. Responda em JSON válido, sem markdown. Use exclusivamente os dados estruturados enviados pela aplicação LUMEN e os fatos explicitamente afirmados pelo usuário na pergunta como fonte de verdade. Preserve o padrão visual e verbal do card do assistente, mas gere o conteúdo do zero com base no contexto recebido. Sua resposta precisa ser concreta: quando existir nome de tarefa, meta, insight, movimentação, valor monetário ou problema explícito do usuário, cite esses itens diretamente em vez de resumir de forma abstrata. Para perguntas de dívida, aperto financeiro, organização da rotina ou vida pessoal, entregue diagnóstico curto e plano viável, nunca coaching genérico.',

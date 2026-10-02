@@ -45,8 +45,7 @@ const createService = (structuredData: unknown = {}, chatText = '  resposta do c
     .fn()
     .mockResolvedValue({ text: chatText, model: 'test-model' });
   const service = new AgilisWorkspaceAiService(
-    { generate } as any,
-    { generateTextFromContents } as any,
+    { generateStructured: generate, generateTextFromContents } as any,
     { getRequestId: () => 'req-1' } as any,
   );
   return { service, generate, generateTextFromContents };

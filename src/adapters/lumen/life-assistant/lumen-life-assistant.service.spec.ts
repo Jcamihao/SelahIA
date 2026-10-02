@@ -1,5 +1,5 @@
 import { LumenLifeAssistantService } from './lumen-life-assistant.service';
-import { StructuredOutputService } from '../../../capabilities/structured-output/structured-output.service';
+import { LlmProvider } from '../../../providers/llm-provider.interface';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { GenerateLumenLifeAssistantResponseDto } from './dto/generate-lumen-life-assistant-response.dto';
 
@@ -69,18 +69,18 @@ describe('LumenLifeAssistantService', () => {
   };
 
   const createService = (
-    generate: jest.MockedFunction<StructuredOutputService['generate']>,
+    generateStructured: jest.MockedFunction<LlmProvider['generateStructured']>,
   ) => {
-    const structuredOutputService = {
-      generate,
-    } as unknown as StructuredOutputService;
+    const llmProvider = {
+      generateStructured,
+    } as unknown as LlmProvider;
 
     const requestContext = {
       getRequestId: jest.fn().mockReturnValue('test-request'),
     } as unknown as RequestContextService;
 
     return new LumenLifeAssistantService(
-      structuredOutputService,
+      llmProvider,
       requestContext,
     );
   };

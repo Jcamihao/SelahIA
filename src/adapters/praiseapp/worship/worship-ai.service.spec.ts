@@ -5,7 +5,7 @@ import {
 } from './worship-ai.prompt';
 
 const providerLikeStructuredOutput = (parsed: unknown) => ({
-  generate: jest.fn(async (input: any) => ({
+  generateStructured: jest.fn(async (input: any) => ({
     data: input.validate(parsed),
     model: 'test-model',
   })),

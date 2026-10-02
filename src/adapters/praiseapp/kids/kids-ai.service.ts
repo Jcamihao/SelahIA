@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { StructuredOutputService } from '../../../capabilities/structured-output/structured-output.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { LlmProvider } from '../../../providers/llm-provider.interface';
+import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
 import { GeneratePraiseAppKidsLessonPlanDto } from './dto/generate-praiseapp-kids-lesson-plan.dto';
 import {
   buildPraiseAppKidsAgeAdaptationsPrompt,
@@ -52,7 +53,7 @@ export class KidsAiService {
   private readonly logger = new Logger(KidsAiService.name);
 
   constructor(
-    private readonly structuredOutputService: StructuredOutputService,
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
     private readonly requestContext: RequestContextService,
   ) {}
 
@@ -79,7 +80,7 @@ export class KidsAiService {
     this.logger.log(
       `[${requestId}] Kids lesson generation started reference="${String(input.biblicalReference || '').trim()}" ageRange="${String(input.ageRangeLabel || '5-7 anos').trim()}" durationMin=${Number(input.durationMin || 35)} templates=${(input.recentTemplateTitles || []).length} lessons=${(input.recentLessonTitles || []).length}`,
     );
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional e seguro para equipes de igreja.',
@@ -115,7 +116,7 @@ export class KidsAiService {
       `[${requestId}] Kids daily summary started date="${String(input.date || '').trim()}" totalCheckins=${Number(input.totalCheckins || 0)} firstVisits=${Number(input.firstVisits || 0)} open=${Number(input.totalOpenCheckins || 0)}`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsCheckinDailySummaryPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional e seguro para equipes de igreja.',
@@ -151,7 +152,7 @@ export class KidsAiService {
       `[${requestId}] Kids next sequence started currentReference="${String(input.currentBiblicalReference || '').trim()}" ageRange="${String(input.ageRangeLabel || '').trim() || 'default'}" recentLessons=${(input.recentLessons || []).length}`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsNextSequencePrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional e seguro para equipes de igreja.',
@@ -187,7 +188,7 @@ export class KidsAiService {
       `[${requestId}] Kids weekly verse expansion started reference="${String(input.reference || '').trim()}"`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsWeeklyVerseExpansionPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco pedagógico, simples e seguro para ministério infantil.',
@@ -223,7 +224,7 @@ export class KidsAiService {
       `[${requestId}] Kids operational assistant started contextChars=${String(input.operationalContext || '').trim().length} desiredDuration=${Number(input.desiredDurationMin || 0) || 'n/a'}`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsOperationalAssistantPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional e seguro para equipes de igreja.',
@@ -259,7 +260,7 @@ export class KidsAiService {
       `[${requestId}] Kids age adaptations started targetRanges=${(input.targetAgeRanges || []).length || 3}`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsAgeAdaptationsPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco pedagógico, comparativo e seguro para ministério infantil.',
@@ -296,7 +297,7 @@ export class KidsAiService {
       `[${requestId}] Kids post-class communication started reference="${String((lessonPlan as Record<string, unknown>)?.biblicalReference || (lessonPlan as Record<string, unknown>)?.textoBase || '').trim()}"`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsPostClassCommunicationPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco acolhedor, pedagógico e seguro para equipes de igreja.',
@@ -332,7 +333,7 @@ export class KidsAiService {
       `[${requestId}] Kids event suggestion started themeChars=${String(input.theme || '').trim().length} date="${String(input.eventDate || '').trim()}" audienceChars=${String(input.targetAudience || '').trim().length}`,
     );
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: buildPraiseAppKidsEventSuggestionPrompt(input),
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com foco operacional, acolhedor e seguro para ministério infantil.',

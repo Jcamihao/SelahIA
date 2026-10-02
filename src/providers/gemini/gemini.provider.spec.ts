@@ -36,8 +36,8 @@ describe('GeminiProvider retry', () => {
       .mockRejectedValueOnce(httpError(429))
       .mockResolvedValueOnce(okResponse('resposta final'));
 
-    const result = await createProvider(post).generateText({
-      userPrompt: 'oi',
+    const result = await createProvider(post).generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
     });
 
     expect(result.text).toBe('resposta final');
@@ -50,7 +50,9 @@ describe('GeminiProvider retry', () => {
       .mockRejectedValueOnce({ code: 'ECONNRESET', message: 'reset' })
       .mockResolvedValueOnce(okResponse());
 
-    await createProvider(post).generateText({ userPrompt: 'oi' });
+    await createProvider(post).generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+    });
 
     expect(post).toHaveBeenCalledTimes(2);
   });
@@ -59,7 +61,9 @@ describe('GeminiProvider retry', () => {
     const post = jest.fn().mockRejectedValue(httpError(503));
 
     await expect(
-      createProvider(post).generateText({ userPrompt: 'oi' }),
+      createProvider(post).generateTextFromContents({
+        contents: [{ parts: [{ text: 'oi' }] }],
+      }),
     ).rejects.toBeInstanceOf(BadGatewayException);
     expect(post).toHaveBeenCalledTimes(3);
   });
@@ -69,7 +73,9 @@ describe('GeminiProvider retry', () => {
       const post = jest.fn().mockRejectedValue(httpError(status));
 
       await expect(
-        createProvider(post).generateText({ userPrompt: 'oi' }),
+        createProvider(post).generateTextFromContents({
+          contents: [{ parts: [{ text: 'oi' }] }],
+        }),
       ).rejects.toBeInstanceOf(BadGatewayException);
       expect(post).toHaveBeenCalledTimes(1);
     }
@@ -81,7 +87,9 @@ describe('GeminiProvider retry', () => {
       .mockRejectedValue(httpError(429, { 'retry-after': '60' }));
 
     await expect(
-      createProvider(post).generateText({ userPrompt: 'oi' }),
+      createProvider(post).generateTextFromContents({
+        contents: [{ parts: [{ text: 'oi' }] }],
+      }),
     ).rejects.toBeInstanceOf(BadGatewayException);
     expect(post).toHaveBeenCalledTimes(1);
   });
@@ -89,7 +97,9 @@ describe('GeminiProvider retry', () => {
   it('caps each attempt timeout to the remaining budget', async () => {
     const post = jest.fn().mockResolvedValue(okResponse());
 
-    await createProvider(post).generateText({ userPrompt: 'oi' });
+    await createProvider(post).generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+    });
 
     const attemptTimeout = post.mock.calls[0][2].timeout as number;
     expect(attemptTimeout).toBeLessThanOrEqual(45000);

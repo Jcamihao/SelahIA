@@ -15,7 +15,7 @@ const SECRET = 'SEGREDO_PII_7f3a91';
 const requestContext = { getRequestId: () => 'req-1' } as any;
 
 const providerLike = (payload: unknown) => ({
-  generate: jest.fn(async (input: any) => ({
+  generateStructured: jest.fn(async (input: any) => ({
     data: input.validate(payload),
     model: 'test-model',
   })),
@@ -236,8 +236,10 @@ describe('logs do Selah nao carregam dados pessoais nem conteudo livre', () => {
     };
     const build = (payload: unknown) =>
       new AgilisWorkspaceAiService(
-        providerLike(payload) as any,
-        { generateTextFromContents: jest.fn().mockResolvedValue({ text: `${SECRET} resposta`, model: 'm' }) } as any,
+        {
+          ...providerLike(payload),
+          generateTextFromContents: jest.fn().mockResolvedValue({ text: `${SECRET} resposta`, model: 'm' }),
+        } as any,
         requestContext,
       );
 

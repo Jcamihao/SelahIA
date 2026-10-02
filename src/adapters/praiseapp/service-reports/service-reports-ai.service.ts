@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { StructuredOutputService } from '../../../capabilities/structured-output/structured-output.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { LlmProvider } from '../../../providers/llm-provider.interface';
+import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { GenerateServiceReportsMonthlySummaryDto } from './dto/generate-monthly-summary.dto';
 import {
@@ -20,7 +21,7 @@ export class ServiceReportsAiService {
   private readonly logger = new Logger(ServiceReportsAiService.name);
 
   constructor(
-    private readonly structuredOutputService: StructuredOutputService,
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
     private readonly requestContext: RequestContextService,
   ) {}
 
@@ -51,7 +52,7 @@ export class ServiceReportsAiService {
 
     const prompt = buildServiceReportsMonthlySummaryPrompt(input);
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
       systemInstruction:
         'Você é Selah IA, uma plataforma interna de IA para SaaS. Responda em JSON válido, sem markdown, com tom pastoral, analítico e encorajador. Baseie-se exclusivamente nos dados fornecidos.',
@@ -79,7 +80,7 @@ export class ServiceReportsAiService {
 
     const prompt = buildChurchHealthPrompt(input);
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
       systemInstruction: 'Você é Selah IA, estrategista de saúde da igreja e especialista em crescimento e retenção ministerial.',
       responseSchema: CHURCH_HEALTH_SCHEMA,

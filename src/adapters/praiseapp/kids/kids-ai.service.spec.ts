@@ -129,7 +129,7 @@ const createService = (parsed: unknown) => {
     model: 'test-model',
   }));
   const service = new KidsAiService(
-    { generate } as any,
+    { generateStructured: generate } as any,
     { getRequestId: () => 'test-request' } as any,
   );
   return { service, generate };

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { CapabilitiesModule } from '../../capabilities/capabilities.module';
 import { InternalApiKeyGuard } from '../../common/auth/internal-api-key.guard';
 import { ProvidersModule } from '../../providers/providers.module';
 import { LumenLifeAssistantController } from './life-assistant/lumen-life-assistant.controller';
@@ -8,7 +7,7 @@ import { LumenReceiptParserController } from './receipt-parser/lumen-receipt-par
 import { LumenReceiptParserService } from './receipt-parser/lumen-receipt-parser.service';
 
 @Module({
-  imports: [CapabilitiesModule, ProvidersModule],
+  imports: [ProvidersModule],
   controllers: [LumenLifeAssistantController, LumenReceiptParserController],
   providers: [
     LumenLifeAssistantService,

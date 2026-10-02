@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { StructuredOutputService } from '../../../capabilities/structured-output/structured-output.service';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { LlmProvider } from '../../../providers/llm-provider.interface';
 import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
@@ -53,7 +52,6 @@ export class AgilisWorkspaceAiService {
   private readonly logger = new Logger(AgilisWorkspaceAiService.name);
 
   constructor(
-    private readonly structuredOutputService: StructuredOutputService,
     @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
     private readonly requestContext: RequestContextService,
   ) {}
@@ -77,7 +75,7 @@ export class AgilisWorkspaceAiService {
     const requestId = this.requestContext.getRequestId();
     this.logger.log(`[${requestId}] Agilis ${label} started promptChars=${userPrompt.length}`);
 
-    const result = await this.structuredOutputService.generate({
+    const result = await this.llmProvider.generateStructured({
       userPrompt,
       systemInstruction: AGILIS_ANALYST_SYSTEM_INSTRUCTION,
       responseSchema,
