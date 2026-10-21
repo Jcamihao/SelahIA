@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { EventEmitter } from 'node:events';
 import { AgilisWorkspaceAiService } from '../../adapters/agilis/workspace/workspace-ai.service';
 import { LumenLifeAssistantService } from '../../adapters/lumen/life-assistant/lumen-life-assistant.service';
+import { MealPhotoService } from '../../adapters/balancogordura/meal-photo/meal-photo.service';
 import { LumenReceiptParserService } from '../../adapters/lumen/receipt-parser/lumen-receipt-parser.service';
 import { KidsAiService } from '../../adapters/praiseapp/kids/kids-ai.service';
 import { ServiceReportsAiService } from '../../adapters/praiseapp/service-reports/service-reports-ai.service';
@@ -109,6 +110,44 @@ describe('logs do Selah nao carregam dados pessoais nem conteudo livre', () => {
     } as any);
 
     expectNoSecretInLogs();
+  });
+
+  it('BalancoGordura meal-photo: otherLabel do modelo e a imagem enviada', async () => {
+    const IMAGE_MARKER = 'QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=';
+    const parsed = {
+      status: 'ok',
+      items: [
+        {
+          foodKey: 'outro',
+          otherLabel: SECRET,
+          preparo: 'cozido',
+          grams: { low: 50, mid: 100, high: 150 },
+          confidence: 'baixa',
+        },
+      ],
+      questions: [],
+    };
+    const generateStructuredFromContents = jest.fn(async (call: any) => ({
+      data: call.validate(parsed),
+      text: JSON.stringify(parsed),
+      model: 'm',
+      raw: {},
+    }));
+    const service = new MealPhotoService(
+      { generateStructuredFromContents } as any,
+      requestContext,
+    );
+
+    const result = await service.analyze({
+      mimeType: 'image/jpeg',
+      imageBase64: IMAGE_MARKER,
+      mealType: 'almoco',
+      localeHint: 'pt-BR',
+    });
+
+    expect(result.items[0].otherLabel).toBe(SECRET);
+    expectNoSecretInLogs();
+    expect(logged.filter((line) => line.includes(IMAGE_MARKER))).toEqual([]);
   });
 
   it('PraiseApp relatorios de culto e saude: nome da igreja e observacoes', async () => {

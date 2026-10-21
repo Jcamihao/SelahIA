@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.5.1-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.6.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -43,6 +43,7 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 ### ⛪ 3) Adaptadores ativos
 - **PraiseApp:** Kids, Louvor, Consolidação e Saúde Ministerial.
 - **LUMEN:** Assistente de vida com foco em finanças, decisões práticas e rotina pessoal.
+- **BalancoGordura:** `meal-photo` — recebe a foto de uma refeição e devolve quais alimentos aparecem (de uma lista fechada), o preparo e as gramas em faixa; **não estima calorias** (isso é feito pelo backend do app, com tabela de composição).
 - **Agilis:** Assistente do workspace (chat com histórico), resumo de projeto e de tarefa, plano de ação, gargalos, sugestão de responsável, redistribuição de carga e brief estratégico.
 
 ## 🧱 Stack
@@ -69,7 +70,7 @@ cp .env.example .env
 - `PORT=3010`
 - `SELAH_DEFAULT_LOCALE=pt-BR`
 - `SELAH_PUBLIC_VERSION=v1`
-- `SELAH_ALLOWED_SOURCE_APPS=PraiseAppBack,LumenBack`
+- `SELAH_ALLOWED_SOURCE_APPS=PraiseAppBack,LumenBack,BalancoGorduraBack` (vale só para chaves legadas)
 - `LLM_PROVIDER=gemini` (padrão; ou `ollama`)
 - `GEMINI_API_KEY=`
 - `GEMINI_MODEL=gemini-2.5-flash`
@@ -143,6 +144,8 @@ src/
   adapters/
     agilis/
       workspace/
+    balancogordura/
+      meal-photo/
     lumen/
       life-assistant/
     praiseapp/
@@ -161,6 +164,7 @@ src/
 
 ## 📌 Documentação complementar
 
+- 📝 Release notes 2.6.0: `docs/releases/v2.6.0.md`
 - 📝 Release notes 2.5.1: `docs/releases/v2.5.1.md`
 - 📝 Release notes 2.5.0: `docs/releases/v2.5.0.md`
 - 📝 Release notes 2.4.1: `docs/releases/v2.4.1.md`
