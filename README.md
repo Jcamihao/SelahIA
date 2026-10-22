@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.6.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.6.1-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
