@@ -3,6 +3,7 @@ import { AgilisModule } from './adapters/agilis/agilis.module';
 import { BalancoGorduraModule } from './adapters/balancogordura/balancogordura.module';
 import { LumenModule } from './adapters/lumen/lumen.module';
 import { PraiseAppModule } from './adapters/praiseapp/praiseapp.module';
+import { PsicologiaModule } from './adapters/psicologia/psicologia.module';
 import { HealthModule } from './health/health.module';
 import { ProvidersModule } from './providers/providers.module';
 import { AuthModule } from './common/auth/auth.module';
@@ -19,6 +20,7 @@ import { RequestLoggingMiddleware } from './common/logging/request-logging.middl
     BalancoGorduraModule,
     LumenModule,
     PraiseAppModule,
+    PsicologiaModule,
   ],
 })
 export class AppModule implements NestModule {
