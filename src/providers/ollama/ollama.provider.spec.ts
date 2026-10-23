@@ -63,4 +63,50 @@ describe('OllamaProvider error redaction', () => {
     expect(error.message).toBe('Ollama request failed status=n/a reason=unknown');
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
+
+  const providerWithResponse = (data: unknown) => {
+    const provider = new OllamaProvider({
+      getRequestId: () => 'test-request',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockResolvedValue({ data }) };
+    return provider;
+  };
+
+  it('done_reason que seja texto livre nao aparece no 502 nem no log (resposta vazia)', async () => {
+    const provider = providerWithResponse({
+      message: { content: '' },
+      done_reason: `texto livre ${MARKER}`,
+    });
+
+    const error = await provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e: Error) => e);
+
+    expect((error as Error).message).toBe('Ollama retornou resposta vazia. doneReason=unknown');
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('done_reason que seja texto livre nao aparece no log de sucesso', async () => {
+    const provider = providerWithResponse({
+      message: { content: 'ok' },
+      done_reason: `texto livre ${MARKER}`,
+    });
+
+    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+
+    expect(logged.some((line) => line.includes('doneReason=unknown'))).toBe(true);
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('done_reason em minusculas do Ollama (stop, length) continua aparecendo', async () => {
+    for (const reason of ['stop', 'length']) {
+      logged.length = 0;
+      const provider = providerWithResponse({ message: { content: 'ok' }, done_reason: reason });
+
+      await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+
+      expect(logged.some((line) => line.includes(`doneReason=${reason}`))).toBe(true);
+    }
+  });
 });

@@ -193,6 +193,53 @@ describe('GeminiProvider error redaction', () => {
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
 
+  const providerWithResponse = (data: unknown) => {
+    process.env.GEMINI_API_KEY = 'test-key';
+    const provider = new GeminiProvider({
+      getRequestId: () => 'test-request',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockResolvedValue({ data }) };
+    return provider;
+  };
+
+  it('finishReason que seja texto livre nao aparece no 502 nem no log (resposta vazia)', async () => {
+    const provider = providerWithResponse({
+      candidates: [{ finishReason: `texto livre ${MARKER}` }],
+    });
+
+    const error = await provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e: Error) => e);
+
+    expect((error as Error).message).toContain('finishReason=unknown');
+    expect((error as Error).message).not.toContain(MARKER);
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('finishReason que seja texto livre nao aparece no log de sucesso', async () => {
+    const provider = providerWithResponse({
+      candidates: [
+        { finishReason: `texto livre ${MARKER}`, content: { parts: [{ text: 'ok' }] } },
+      ],
+    });
+
+    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+
+    expect(logged.some((line) => line.includes('finishReason=unknown'))).toBe(true);
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('finishReason enum valido continua aparecendo no log', async () => {
+    const provider = providerWithResponse({
+      candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'ok' }] } }],
+    });
+
+    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+
+    expect(logged.some((line) => line.includes('finishReason=STOP'))).toBe(true);
+  });
+
   it('resposta vazia nao repete o texto livre do promptFeedback', async () => {
     process.env.GEMINI_API_KEY = 'test-key';
     const provider = new GeminiProvider({

@@ -8,6 +8,7 @@ import {
   StructuredGenerationResult,
 } from '../llm-provider.interface';
 import { RequestContextService } from '../../common/logging/request-context.service';
+import { pickReasonToken, pickUpperEnum } from '../safe-token';
 
 type OllamaMessage = {
   role: 'system' | 'user' | 'assistant';
@@ -185,7 +186,7 @@ export class OllamaProvider implements LlmProvider {
       );
 
       const durationMs = Date.now() - startedAt;
-      const doneReason = String(response.data?.done_reason || 'unknown').trim();
+      const doneReason = pickReasonToken(response.data?.done_reason);
       const promptTokens = Number(response.data?.prompt_eval_count || 0);
       const evalTokens = Number(response.data?.eval_count || 0);
 
@@ -204,9 +205,7 @@ export class OllamaProvider implements LlmProvider {
       if (error instanceof BadGatewayException) throw error;
       const status = Number(error?.response?.status || 0);
       // O campo error do Ollama e texto livre: so o codigo de rede (enum) sai daqui.
-      const code = /^[A-Z_]{3,40}$/.test(String(error?.code))
-        ? String(error.code)
-        : 'unknown';
+      const code = pickUpperEnum(error?.code);
 
       const durationMs = Date.now() - startedAt;
       this.logger.error(

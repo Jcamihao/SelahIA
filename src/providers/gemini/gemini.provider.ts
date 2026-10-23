@@ -14,6 +14,7 @@ import {
   StructuredGenerationResult,
 } from '../llm-provider.interface';
 import { RequestContextService } from '../../common/logging/request-context.service';
+import { isUpperEnum, pickUpperEnum } from '../safe-token';
 
 type GeminiCandidate = {
   content?: {
@@ -27,10 +28,6 @@ type GeminiResponse = {
   usageMetadata?: Record<string, unknown>;
   promptFeedback?: Record<string, unknown>;
 };
-
-// Enum (ex.: RESOURCE_EXHAUSTED, ECONNABORTED): unico formato que pode ir para log e 502.
-const isEnum = (value: unknown): value is string =>
-  typeof value === 'string' && /^[A-Z_]{3,40}$/.test(value);
 
 const GEMINI_RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const GEMINI_RETRYABLE_NETWORK_CODES = new Set([
@@ -290,9 +287,9 @@ export class GeminiProvider implements LlmProvider {
         );
 
         const durationMs = Date.now() - startedAt;
-        const finishReason = String(
-          response.data?.candidates?.[0]?.finishReason || 'unknown',
-        ).trim();
+        const finishReason = pickUpperEnum(
+          response.data?.candidates?.[0]?.finishReason,
+        );
         const usage = this.summarizeUsage(response.data?.usageMetadata);
 
         this.logger.log(
@@ -327,8 +324,8 @@ export class GeminiProvider implements LlmProvider {
   // Motivo seguro para log e 502: so enum (status da Google ou codigo de rede), nunca texto livre.
   private safeReason(error: any): string {
     const googleStatus = error?.response?.data?.error?.status;
-    if (isEnum(googleStatus)) return googleStatus;
-    return isEnum(error?.code) ? error.code : 'unknown';
+    if (isUpperEnum(googleStatus)) return googleStatus;
+    return pickUpperEnum(error?.code);
   }
 
   // Retorna o atraso antes da proxima tentativa, ou null se o erro nao deve ser repetido.
@@ -363,7 +360,7 @@ export class GeminiProvider implements LlmProvider {
 
   private extractText(response: GeminiResponse) {
     const candidate = (response?.candidates || [])[0];
-    const finishReason = String(candidate?.finishReason || '').trim();
+    const finishReason = pickUpperEnum(candidate?.finishReason);
     const parts = candidate?.content?.parts || [];
     const text = parts
       .map((part) => String(part?.text || '').trim())
@@ -375,7 +372,7 @@ export class GeminiProvider implements LlmProvider {
       // promptFeedback tem texto livre (blockReasonMessage): so o enum blockReason sai daqui.
       const blockReason = response?.promptFeedback?.blockReason;
       throw new BadGatewayException(
-        `Gemini returned empty content. finishReason=${finishReason || 'unknown'} blockReason=${isEnum(blockReason) ? blockReason : 'none'}`,
+        `Gemini returned empty content. finishReason=${finishReason} blockReason=${pickUpperEnum(blockReason, 'none')}`,
       );
     }
 
