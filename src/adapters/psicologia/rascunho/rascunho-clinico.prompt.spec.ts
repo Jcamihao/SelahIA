@@ -50,6 +50,11 @@ describe('guardas clínicas da instrução', () => {
     expect(instrucao).toContain('Não acrescente diagnóstico, hipótese ou conclusão que o texto não afirma');
   });
 
+  it('manda descrever só o que a nota relata, sem rótulos interpretativos', () => {
+    expect(instrucao).toContain('Descreva só o que a nota relata, com as palavras dela; não rotule nem interprete');
+    expect(instrucao).toContain('a menos que a própria nota use esse termo');
+  });
+
   it('proíbe omitir ou suavizar conteúdo de risco e manda manter a gravidade', () => {
     expect(instrucao).toContain('Nunca omita nem suavize conteúdo de risco');
     expect(instrucao).toContain('ideação suicida, autolesão, violência, abuso');
