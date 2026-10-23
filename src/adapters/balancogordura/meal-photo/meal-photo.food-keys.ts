@@ -1,4 +1,4 @@
-// GERADO de engine/data/food-keys.json (sha256: 704cf9ab9d46ccb92b0895e228e19c743336c7c997d8a61e2061af48400f6f82). Não editar à mão.
+// GERADO de engine/data/food-keys.json (sha256: 8e0c402d258e5b4e50b42e178b83dbf517acbafab2476573ceae6615d2be59a1). Não editar à mão.
 // Regerar: cd BalancoGordura/engine && npx tsx scripts/export-selah-food-keys.ts
 
 export const MEAL_PHOTO_FOOD_KEYS = [
@@ -313,11 +313,13 @@ export const MEAL_PHOTO_FOOD_PREPAROS: Readonly<Record<string, readonly string[]
     "frito",
     "cozido",
     "cru",
-    "refogado"
+    "refogado",
+    "assado"
   ],
   "batata_doce": [
     "cozido",
-    "cru"
+    "cru",
+    "assado"
   ],
   "mandioca": [
     "frito",
