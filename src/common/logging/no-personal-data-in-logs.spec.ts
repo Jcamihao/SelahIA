@@ -3,6 +3,7 @@ import { EventEmitter } from 'node:events';
 import { AgilisWorkspaceAiService } from '../../adapters/agilis/workspace/workspace-ai.service';
 import { LumenLifeAssistantService } from '../../adapters/lumen/life-assistant/lumen-life-assistant.service';
 import { MealPhotoService } from '../../adapters/balancogordura/meal-photo/meal-photo.service';
+import { RascunhoClinicoService } from '../../adapters/psicologia/rascunho/rascunho-clinico.service';
 import { LumenReceiptParserService } from '../../adapters/lumen/receipt-parser/lumen-receipt-parser.service';
 import { KidsAiService } from '../../adapters/praiseapp/kids/kids-ai.service';
 import { ServiceReportsAiService } from '../../adapters/praiseapp/service-reports/service-reports-ai.service';
@@ -148,6 +149,38 @@ describe('logs do Selah nao carregam dados pessoais nem conteudo livre', () => {
     expect(result.items[0].otherLabel).toBe(SECRET);
     expectNoSecretInLogs();
     expect(logged.filter((line) => line.includes(IMAGE_MARKER))).toEqual([]);
+  });
+
+  it('Psicologia rascunho clinico: nota do atendimento e saida do modelo, no sucesso e na falha', async () => {
+    const nota = `Paciente relata ${SECRET} e pensamentos de se machucar.`;
+    const dto = (tipoDocumento: 'evolucao' | 'anamnese', abordagem: 'TCC' | 'PSICANALISE') =>
+      ({ tipoDocumento, abordagem, textoAnonimizado: nota }) as any;
+
+    const sucesso = new RascunhoClinicoService(
+      providerLike({ rascunho: `Rascunho com ${SECRET} no texto.` }) as any,
+      requestContext,
+    );
+    await sucesso.gerar(dto('evolucao', 'TCC'));
+    await sucesso.gerar(dto('anamnese', 'PSICANALISE'));
+
+    // Falha do provider: a mensagem de erro pode trazer texto da nota; o log so pode ter o nome da classe.
+    const provider = {
+      generateStructured: jest.fn().mockRejectedValue(new Error(`upstream repetiu ${SECRET}`)),
+    };
+    await new RascunhoClinicoService(provider as any, requestContext)
+      .gerar(dto('evolucao', 'TCC'))
+      .catch(() => undefined);
+
+    // Saida invalida do modelo: a validacao falha com a saida na mao.
+    await new RascunhoClinicoService(
+      providerLike({ rascunho: '   ', extra: SECRET }) as any,
+      requestContext,
+    )
+      .gerar(dto('anamnese', 'TCC'))
+      .catch(() => undefined);
+
+    expectNoSecretInLogs();
+    expect(logged.some((line) => line.includes('Rascunho clinico failed'))).toBe(true);
   });
 
   it('PraiseApp relatorios de culto e saude: nome da igreja e observacoes', async () => {
