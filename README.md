@@ -5,18 +5,18 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.7.3-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.7.4-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
 </p>
 
 # 🤖 Selah IA
-Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM plugável — Gemini por padrão, ou Ollama — + capabilities de geração de texto/JSON estruturado).
+Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM plugável — Gemini por padrão, ou Ollama — + geração de texto/JSON estruturado).
 
 ## ✨ Visão rápida
 
-- 🧠 **Core reutilizável:** providers, capabilities e adapters desacoplados.
+- 🧠 **Core reutilizável:** providers e adapters desacoplados.
 - 🔐 **Segurança entre serviços:** autenticação interna com `X-Selah-Api-Key`.
 - 🧩 **Adaptação por domínio:** PraiseApp e LUMEN compartilham a mesma base, com prompts e contratos próprios.
 - 🛟 **Fallback inteligente:** respostas genéricas disparam retry guiado e regras locais quando necessário.
@@ -33,7 +33,7 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 ### 🧠 1) Core da plataforma
 - Geração de texto e JSON estruturado com validação pós-provider.
 - Contrato único para troca futura de provider sem reescrever adapters.
-- Capabilities reutilizáveis para outros SaaS internos.
+- Adapters novos para outros SaaS internos reutilizam o mesmo provider, sem reescrever o core.
 
 ### 🔌 2) Provider atual
 - Selecionável via `LLM_PROVIDER` (`gemini` ou `ollama`), **padrão `gemini`**.
