@@ -28,6 +28,10 @@ type GeminiResponse = {
   promptFeedback?: Record<string, unknown>;
 };
 
+// Enum (ex.: RESOURCE_EXHAUSTED, ECONNABORTED): unico formato que pode ir para log e 502.
+const isEnum = (value: unknown): value is string =>
+  typeof value === 'string' && /^[A-Z_]{3,40}$/.test(value);
+
 const GEMINI_RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const GEMINI_RETRYABLE_NETWORK_CODES = new Set([
   'ECONNRESET',
@@ -298,28 +302,33 @@ export class GeminiProvider implements LlmProvider {
         return response.data;
       } catch (error: any) {
         const status = Number(error?.response?.status || 0);
-        const apiMessage =
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'Falha ao chamar Gemini Developer API.';
+        const reason = this.safeReason(error);
         const elapsedMs = Date.now() - startedAt;
 
         const delayMs = this.nextRetryDelayMs(error, attempt);
         if (delayMs !== null && elapsedMs + delayMs < this.timeoutMs) {
           this.logger.warn(
-            `[${requestId}] Gemini request will retry mode=${meta.mode} model=${model} status=${status || error?.code || 'n/a'} attempt=${attempt + 1}/${this.maxRetries + 1} delayMs=${delayMs}: ${apiMessage}`,
+            `[${requestId}] Gemini request will retry mode=${meta.mode} model=${model} status=${status || 'n/a'} attempt=${attempt + 1}/${this.maxRetries + 1} delayMs=${delayMs} reason=${reason}`,
           );
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           continue;
         }
 
         this.logger.error(
-          `[${requestId}] Gemini request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} attempts=${attempt + 1} durationMs=${elapsedMs}: ${apiMessage}`,
+          `[${requestId}] Gemini request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} attempts=${attempt + 1} durationMs=${elapsedMs} reason=${reason}`,
         );
-        throw new BadGatewayException(`Gemini request failed: ${apiMessage}`);
+        throw new BadGatewayException(
+          `Gemini request failed status=${status || 'n/a'} reason=${reason}`,
+        );
       }
     }
+  }
+
+  // Motivo seguro para log e 502: so enum (status da Google ou codigo de rede), nunca texto livre.
+  private safeReason(error: any): string {
+    const googleStatus = error?.response?.data?.error?.status;
+    if (isEnum(googleStatus)) return googleStatus;
+    return isEnum(error?.code) ? error.code : 'unknown';
   }
 
   // Retorna o atraso antes da proxima tentativa, ou null se o erro nao deve ser repetido.
@@ -363,9 +372,10 @@ export class GeminiProvider implements LlmProvider {
       .trim();
 
     if (!text) {
-      const feedback = JSON.stringify(response?.promptFeedback || {});
+      // promptFeedback tem texto livre (blockReasonMessage): so o enum blockReason sai daqui.
+      const blockReason = response?.promptFeedback?.blockReason;
       throw new BadGatewayException(
-        `Gemini returned empty content. finishReason=${finishReason || 'unknown'} feedback=${feedback}`,
+        `Gemini returned empty content. finishReason=${finishReason || 'unknown'} blockReason=${isEnum(blockReason) ? blockReason : 'none'}`,
       );
     }
 

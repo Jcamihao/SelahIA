@@ -203,16 +203,18 @@ export class OllamaProvider implements LlmProvider {
     } catch (error: any) {
       if (error instanceof BadGatewayException) throw error;
       const status = Number(error?.response?.status || 0);
-      const apiMessage =
-        error?.response?.data?.error ||
-        error?.message ||
-        'Falha ao chamar Ollama.';
+      // O campo error do Ollama e texto livre: so o codigo de rede (enum) sai daqui.
+      const code = /^[A-Z_]{3,40}$/.test(String(error?.code))
+        ? String(error.code)
+        : 'unknown';
 
       const durationMs = Date.now() - startedAt;
       this.logger.error(
-        `[${requestId}] Ollama request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} durationMs=${durationMs}: ${apiMessage}`,
+        `[${requestId}] Ollama request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} durationMs=${durationMs} reason=${code}`,
       );
-      throw new BadGatewayException(`Ollama request failed: ${apiMessage}`);
+      throw new BadGatewayException(
+        `Ollama request failed status=${status || 'n/a'} reason=${code}`,
+      );
     }
   }
 

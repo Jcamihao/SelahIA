@@ -1,4 +1,4 @@
-import { BadGatewayException } from '@nestjs/common';
+import { BadGatewayException, Logger } from '@nestjs/common';
 import { GeminiProvider } from './gemini.provider';
 
 const okResponse = (text = 'ok') => ({
@@ -104,5 +104,115 @@ describe('GeminiProvider retry', () => {
     const attemptTimeout = post.mock.calls[0][2].timeout as number;
     expect(attemptTimeout).toBeLessThanOrEqual(45000);
     expect(attemptTimeout).toBeGreaterThan(40000);
+  });
+});
+
+// Erro do upstream nao pode vazar texto livre (pode repetir conteudo da requisicao) para log nem 502.
+describe('GeminiProvider error redaction', () => {
+  const MARKER = 'NOTA_SECRETA_7f3a';
+  const originalEnv = { ...process.env };
+  let logged: string[];
+
+  const upstreamError = (status: number, googleStatus?: string) => ({
+    message: `falhou ${MARKER}`,
+    response: {
+      status,
+      headers: {},
+      data: { error: { message: `eco ${MARKER}`, status: googleStatus } },
+    },
+  });
+
+  const run = async (error: unknown) => {
+    process.env.GEMINI_API_KEY = 'test-key';
+    process.env.GEMINI_RETRY_BASE_MS = '1';
+    process.env.GEMINI_RETRY_MAX_DELAY_MS = '5';
+    const provider = new GeminiProvider({
+      getRequestId: () => 'test-request',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockRejectedValue(error) };
+    return provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .then(
+        () => {
+          throw new Error('deveria falhar');
+        },
+        (e: Error) => e.message,
+      );
+  };
+
+  beforeEach(() => {
+    logged = [];
+    for (const level of ['log', 'warn', 'error', 'debug', 'verbose'] as const) {
+      jest
+        .spyOn(Logger.prototype, level)
+        .mockImplementation((message: any) => {
+          logged.push(String(message));
+        });
+    }
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    process.env = { ...originalEnv };
+  });
+
+  it('nao loga nem devolve a mensagem do upstream', async () => {
+    const message = await run(upstreamError(400));
+
+    expect(message).toBe('Gemini request failed status=400 reason=unknown');
+    expect(message).not.toContain(MARKER);
+    expect(logged.length).toBeGreaterThan(0);
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('mostra o enum de status da Google', async () => {
+    const message = await run(upstreamError(400, 'INVALID_ARGUMENT'));
+
+    expect(message).toBe(
+      'Gemini request failed status=400 reason=INVALID_ARGUMENT',
+    );
+    expect(logged.some((line) => line.includes('reason=INVALID_ARGUMENT'))).toBe(
+      true,
+    );
+  });
+
+  it('nao mostra status que seja texto livre', async () => {
+    const message = await run(upstreamError(400, `texto livre ${MARKER}`));
+
+    expect(message).toBe('Gemini request failed status=400 reason=unknown');
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('erro de rede sem status mostra o codigo e nao a mensagem', async () => {
+    const message = await run({ code: 'ECONNABORTED', message: MARKER });
+
+    expect(message).toBe(
+      'Gemini request failed status=n/a reason=ECONNABORTED',
+    );
+    expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
+  });
+
+  it('resposta vazia nao repete o texto livre do promptFeedback', async () => {
+    process.env.GEMINI_API_KEY = 'test-key';
+    const provider = new GeminiProvider({
+      getRequestId: () => 'test-request',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = {
+      post: jest.fn().mockResolvedValue({
+        data: {
+          candidates: [{ finishReason: 'SAFETY' }],
+          promptFeedback: { blockReason: 'SAFETY', blockReasonMessage: MARKER },
+        },
+      }),
+    };
+
+    const error = await provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e: Error) => e);
+
+    expect((error as Error).message).toContain('blockReason=SAFETY');
+    expect((error as Error).message).not.toContain(MARKER);
   });
 });
