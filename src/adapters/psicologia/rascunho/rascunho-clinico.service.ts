@@ -60,7 +60,9 @@ export class RascunhoClinicoService {
         responseSchema: RASCUNHO_CLINICO_SCHEMA,
         validate: validateRascunhoClinicoResponse,
         temperature: 0.2,
-        maxOutputTokens: 1500,
+        // 4096 e estimativa (anamnese de 8000 chars de entrada): medir com saida real do Gemini.
+        maxOutputTokens: 4096,
+        thinkingBudget: 0,
       });
 
       this.logger.log(

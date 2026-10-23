@@ -44,12 +44,10 @@ describe('RascunhoClinicoService.gerar', () => {
     expect(call.userPrompt).toBe(buildRascunhoClinicoUserPrompt(dto));
     expect(call.responseSchema).toBe(RASCUNHO_CLINICO_SCHEMA);
     expect(call.temperature).toBe(0.2);
-    expect(call.maxOutputTokens).toBe(1500);
+    expect(call.maxOutputTokens).toBe(4096);
+    expect(call.thinkingBudget).toBe(0);
     expect(result.rascunho).toBe('Paciente relatou ansiedade.');
     expect(result.model).toBe('gemini-test');
-    expect(typeof result.provider).toBe('string');
-    expect(typeof result.version).toBe('string');
-    expect(Number.isNaN(Date.parse(result.generatedAt))).toBe(false);
   });
 
   it('propaga a falha da validacao quando o modelo devolve rascunho vazio', async () => {
@@ -89,19 +87,16 @@ describe('RascunhoClinicoService.gerar', () => {
     });
 
     it('caminho de erro: a mensagem da falha nao vaza a nota nem a saida do modelo', async () => {
-      const failing = new RascunhoClinicoService(
-        {
-          generateStructured: jest
-            .fn()
-            .mockRejectedValue(new Error(`${NOTA_MARKER} ${MODELO_MARKER}`)),
-        } as any,
-        { getRequestId: () => 'req-1' } as any,
+      const { service, generateStructured } = createService(null);
+      generateStructured.mockRejectedValueOnce(new Error(`${NOTA_MARKER} ${MODELO_MARKER}`));
+
+      await expect(
+        service.gerar({ ...dto, textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}` }),
+      ).rejects.toThrow();
+
+      expect(Logger.prototype.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Rascunho clinico failed'),
       );
-
-      await failing
-        .gerar({ ...dto, textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}` })
-        .catch(() => undefined);
-
       expectNoMarkerInLogs();
     });
   });

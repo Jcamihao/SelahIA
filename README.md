@@ -45,6 +45,7 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 - **LUMEN:** Assistente de vida com foco em finanças, decisões práticas e rotina pessoal.
 - **BalancoGordura:** `meal-photo` — recebe a foto de uma refeição e devolve quais alimentos aparecem (de uma lista fechada), o preparo e as gramas em faixa; **não estima calorias** (isso é feito pelo backend do app, com tabela de composição).
 - **Agilis:** Assistente do workspace (chat com histórico), resumo de projeto e de tarefa, plano de ação, gargalos, sugestão de responsável, redistribuição de carga e brief estratégico.
+- **psicologia:** `rascunho` — recebe a anotação **já anonimizada** de uma sessão e devolve um rascunho de evolução ou anamnese conforme a abordagem do psicólogo (usado pelo Notta.psi); **não anonimiza**, e por enquanto só deve receber dado sintético (ver `docs/releases/v2.7.0.md`).
 
 ## 🧱 Stack
 
@@ -150,9 +151,8 @@ src/
       life-assistant/
     praiseapp/
       kids/
-  capabilities/
-    structured-output/
-    text/
+    psicologia/
+      rascunho/
   common/
     auth/
     logging/
