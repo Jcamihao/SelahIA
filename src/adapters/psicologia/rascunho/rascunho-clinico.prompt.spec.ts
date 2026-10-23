@@ -62,6 +62,20 @@ describe('guardas clínicas da instrução', () => {
     expect(instrucao).toContain('a menos que a própria nota use esse termo');
   });
 
+  it('manda separar em parágrafos e deixar cada título de seção sozinho em uma linha', () => {
+    expect(instrucao).toContain('parágrafos separados por uma linha em branco');
+    expect(instrucao).toContain(
+      'cada título sozinho em uma linha, com o texto da seção na linha de baixo',
+    );
+  });
+
+  it('a regra de formato não autoriza criar nem renomear seções, nem usar markdown', () => {
+    expect(instrucao).toContain(
+      'não crie seções que a nota não tem nem renomeie as dela',
+    );
+    expect(instrucao).toContain('sem símbolos de markdown');
+  });
+
   it('proíbe omitir ou suavizar conteúdo de risco e manda manter a gravidade', () => {
     expect(instrucao).toContain('Nunca omita nem suavize conteúdo de risco');
     expect(instrucao).toContain('ideação suicida, autolesão, violência, abuso');
