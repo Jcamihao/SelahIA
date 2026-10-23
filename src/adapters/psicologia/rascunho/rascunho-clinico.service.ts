@@ -32,9 +32,7 @@ export class RascunhoClinicoService {
     };
   }
 
-  async gerar(
-    dto: GerarRascunhoDto,
-  ): Promise<
+  async gerar(dto: GerarRascunhoDto): Promise<
     {
       provider: string;
       version: string;

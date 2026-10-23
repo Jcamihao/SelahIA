@@ -6,7 +6,9 @@ import { RascunhoClinicoService } from './rascunho-clinico.service';
 @UseGuards(InternalApiKeyGuard)
 @Controller('v1/adapters/psicologia/rascunho')
 export class RascunhoClinicoController {
-  constructor(private readonly rascunhoClinicoService: RascunhoClinicoService) {}
+  constructor(
+    private readonly rascunhoClinicoService: RascunhoClinicoService,
+  ) {}
 
   @Post('gerar')
   @HttpCode(200)

@@ -63,10 +63,18 @@ describe('RascunhoClinicoService.gerar', () => {
 
     beforeEach(() => {
       logged = [];
-      for (const level of ['log', 'warn', 'error', 'debug', 'verbose'] as const) {
-        jest.spyOn(Logger.prototype, level).mockImplementation((message: any) => {
-          logged.push(String(message));
-        });
+      for (const level of [
+        'log',
+        'warn',
+        'error',
+        'debug',
+        'verbose',
+      ] as const) {
+        jest
+          .spyOn(Logger.prototype, level)
+          .mockImplementation((message: any) => {
+            logged.push(String(message));
+          });
       }
     });
 
@@ -79,19 +87,29 @@ describe('RascunhoClinicoService.gerar', () => {
     };
 
     it('caminho feliz: nem a nota nem a saida do modelo aparecem nos logs', async () => {
-      const { service } = createService({ rascunho: `${MODELO_MARKER} Paciente relatou...` });
+      const { service } = createService({
+        rascunho: `${MODELO_MARKER} Paciente relatou...`,
+      });
 
-      await service.gerar({ ...dto, textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}` });
+      await service.gerar({
+        ...dto,
+        textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}`,
+      });
 
       expectNoMarkerInLogs();
     });
 
     it('caminho de erro: a mensagem da falha nao vaza a nota nem a saida do modelo', async () => {
       const { service, generateStructured } = createService(null);
-      generateStructured.mockRejectedValueOnce(new Error(`${NOTA_MARKER} ${MODELO_MARKER}`));
+      generateStructured.mockRejectedValueOnce(
+        new Error(`${NOTA_MARKER} ${MODELO_MARKER}`),
+      );
 
       await expect(
-        service.gerar({ ...dto, textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}` }),
+        service.gerar({
+          ...dto,
+          textoAnonimizado: `[PACIENTE] disse ${NOTA_MARKER}`,
+        }),
       ).rejects.toThrow();
 
       expect(Logger.prototype.warn).toHaveBeenCalledWith(

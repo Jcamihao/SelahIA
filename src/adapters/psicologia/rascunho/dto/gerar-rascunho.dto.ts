@@ -1,7 +1,20 @@
-import { IsIn, IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export const TIPOS_DOCUMENTO = ['evolucao', 'anamnese'] as const;
-export const ABORDAGENS = ['SISTEMICA', 'TCC', 'PSICANALISE', 'ACT', 'HUMANISTA', 'OUTRA'] as const;
+export const ABORDAGENS = [
+  'SISTEMICA',
+  'TCC',
+  'PSICANALISE',
+  'ACT',
+  'HUMANISTA',
+  'OUTRA',
+] as const;
 
 export class GerarRascunhoDto {
   @IsIn(TIPOS_DOCUMENTO)
