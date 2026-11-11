@@ -66,7 +66,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 - **2.8.0:** CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, cota do Gemini como 503 + `Retry-After`, formatação de todo o código. **2.9.0:** limite de concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy`. **2.9.1:** NestJS 10 → 11 (Express 5) e `npm audit fix`: `npm audit --omit=dev` de 10 vulnerabilidades (1 crítica) para **0**. Detalhes e impacto em `docs/releases/v2.8.0.md`, `v2.9.0.md` e `v2.9.1.md`.
 - **Verificado com o processo real** (`node dist/main` + Gemini falso programável): shutdown com requisição em andamento (v2.8.0); circuito, fila cheia, nova tentativa, cota e métricas (v2.9.0); Express 5, rotas e shutdown de novo no Nest 11 (v2.9.1).
 - Produção: Docker Compose (`docker-compose.prod.yml`) em `127.0.0.1:3020` atrás do nginx (`deploy/nginx/selah.conf`, `selah.financelumen.tech`). O `Dockerfile` já tem `HEALTHCHECK` e roda como usuário `node`.
-- **Nada foi deployado nem pushado para `master` por esta sessão.** O trabalho está na branch `claude/charming-bohr-b00dys`.
+- **Mesclado em `master`** por pull request, a pedido do dono, ao fim da sessão de 2026-11-11 (build, lint, 339 unitários e 17 e2e passando). **Nada foi deployado**: o deploy na VPS continua manual e não foi feito. Antes dele, confira o `.env.production` (em produção o Selah não sobe sem `GEMINI_API_KEY` e sem chave de API interna; ver `docs/releases/v2.8.0.md`) e a seção "Dívidas conhecidas".
 
 ## 6. Dívidas conhecidas (não resolvidas)
 | Item | Detalhe |
