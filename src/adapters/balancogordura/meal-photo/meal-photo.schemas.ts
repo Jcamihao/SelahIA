@@ -66,7 +66,8 @@ export const MEAL_PHOTO_SCHEMA: JsonSchema = {
     },
     items: {
       type: 'array',
-      description: 'Alimentos visiveis no prato. Vazio quando status e nao_e_comida ou qualidade_baixa.',
+      description:
+        'Alimentos visiveis no prato. Vazio quando status e nao_e_comida ou qualidade_baixa.',
       items: {
         type: 'object',
         required: ['foodKey', 'otherLabel', 'preparo', 'grams', 'confidence'],
@@ -97,13 +98,17 @@ export const MEAL_PHOTO_SCHEMA: JsonSchema = {
     },
     questions: {
       type: 'array',
-      description: 'Perguntas sobre gordura escondida (oleo, molho, tempero, queijo), so quando a resposta muda muito o que ha no prato.',
+      description:
+        'Perguntas sobre gordura escondida (oleo, molho, tempero, queijo), so quando a resposta muda muito o que ha no prato.',
       items: {
         type: 'object',
         required: ['id', 'itemIndex'],
         properties: {
           id: { type: 'string', enum: [...MEAL_PHOTO_QUESTION_IDS] },
-          itemIndex: { type: 'integer', description: 'Posicao do alimento em items, a partir de 0.' },
+          itemIndex: {
+            type: 'integer',
+            description: 'Posicao do alimento em items, a partir de 0.',
+          },
         },
         additionalProperties: false,
       },
@@ -115,16 +120,24 @@ export const MEAL_PHOTO_SCHEMA: JsonSchema = {
 const FOOD_KEY_SET: ReadonlySet<string> = new Set(MEAL_PHOTO_FOOD_KEYS);
 
 const fail = (reason: string): never => {
-  throw new BadGatewayException(`Resposta da IA invalida para meal-photo: ${reason}.`);
+  throw new BadGatewayException(
+    `Resposta da IA invalida para meal-photo: ${reason}.`,
+  );
 };
 
-const oneOf = <T extends string>(list: readonly T[], value: unknown): value is T =>
+const oneOf = <T extends string>(
+  list: readonly T[],
+  value: unknown,
+): value is T =>
   typeof value === 'string' && (list as readonly string[]).includes(value);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-const describeUncoveredPreparo = (foodKey: string, preparo: MealPhotoPreparo) => {
+const describeUncoveredPreparo = (
+  foodKey: string,
+  preparo: MealPhotoPreparo,
+) => {
   const name = MEAL_PHOTO_FOOD_LABELS[foodKey] ?? foodKey;
   const text = preparo === 'nao_se_aplica' ? name : `${name} (${preparo})`;
   return text.slice(0, MAX_OTHER_LABEL);
@@ -134,11 +147,18 @@ const validateGrams = (value: unknown, index: number) => {
   if (!isRecord(value)) return fail(`gramas ausentes no item ${index}`);
   const { low, mid, high } = value;
   for (const grams of [low, mid, high]) {
-    if (typeof grams !== 'number' || !Number.isFinite(grams) || grams <= 0 || grams > MAX_GRAMS) {
+    if (
+      typeof grams !== 'number' ||
+      !Number.isFinite(grams) ||
+      grams <= 0 ||
+      grams > MAX_GRAMS
+    ) {
       return fail(`gramas fora de (0, ${MAX_GRAMS}] no item ${index}`);
     }
   }
-  if (!((low as number) <= (mid as number) && (mid as number) <= (high as number))) {
+  if (
+    !((low as number) <= (mid as number) && (mid as number) <= (high as number))
+  ) {
     return fail(`faixa de gramas invertida no item ${index}`);
   }
   return { low: low as number, mid: mid as number, high: high as number };
@@ -152,16 +172,21 @@ const validateItem = (value: unknown, index: number): MealPhotoItem => {
   if (typeof foodKey !== 'string' || (!isOther && !FOOD_KEY_SET.has(foodKey))) {
     return fail(`foodKey fora da lista no item ${index}`);
   }
-  if (!oneOf(MEAL_PHOTO_CONFIDENCES, confidence)) return fail(`confianca invalida no item ${index}`);
-  if (!oneOf(MEAL_PHOTO_PREPAROS, preparo)) return fail(`preparo invalido no item ${index}`);
+  if (!oneOf(MEAL_PHOTO_CONFIDENCES, confidence))
+    return fail(`confianca invalida no item ${index}`);
+  if (!oneOf(MEAL_PHOTO_PREPAROS, preparo))
+    return fail(`preparo invalido no item ${index}`);
 
   let label: string | null = null;
   if (isOther) {
     label = typeof otherLabel === 'string' ? otherLabel.trim() : '';
     if (label.length < 1 || label.length > MAX_OTHER_LABEL) {
-      return fail(`otherLabel precisa ter de 1 a ${MAX_OTHER_LABEL} caracteres no item ${index}`);
+      return fail(
+        `otherLabel precisa ter de 1 a ${MAX_OTHER_LABEL} caracteres no item ${index}`,
+      );
     }
-    if (confidence === 'alta') return fail(`item "outro" nao pode ter confianca alta (item ${index})`);
+    if (confidence === 'alta')
+      return fail(`item "outro" nao pode ter confianca alta (item ${index})`);
   } else if (!MEAL_PHOTO_FOOD_PREPAROS[foodKey]?.includes(preparo)) {
     // Preparo que a tabela do consumidor nao cobre (ex.: batata assada): em vez de derrubar a
     // refeicao inteira, o item vira "outro" e o usuario registra as calorias a mao.
@@ -183,7 +208,10 @@ const validateItem = (value: unknown, index: number): MealPhotoItem => {
   };
 };
 
-const validateQuestion = (value: unknown, itemCount: number): MealPhotoQuestion => {
+const validateQuestion = (
+  value: unknown,
+  itemCount: number,
+): MealPhotoQuestion => {
   if (!isRecord(value) || !oneOf(MEAL_PHOTO_QUESTION_IDS, value.id)) {
     return fail('pergunta com id fora da lista');
   }
@@ -199,7 +227,9 @@ const validateQuestion = (value: unknown, itemCount: number): MealPhotoQuestion 
   return { id: value.id, itemIndex };
 };
 
-export const validateMealPhotoResponse = (payload: unknown): MealPhotoResponse => {
+export const validateMealPhotoResponse = (
+  payload: unknown,
+): MealPhotoResponse => {
   if (!isRecord(payload)) return fail('payload nao e objeto');
 
   const { status, items: rawItems, questions: rawQuestions } = payload;
@@ -213,10 +243,13 @@ export const validateMealPhotoResponse = (payload: unknown): MealPhotoResponse =
 
   if (rawItems.length === 0) return fail('nenhum alimento identificado');
   if (rawItems.length > MAX_ITEMS) return fail(`mais de ${MAX_ITEMS} itens`);
-  if (rawQuestions.length > MAX_QUESTIONS) return fail(`mais de ${MAX_QUESTIONS} perguntas`);
+  if (rawQuestions.length > MAX_QUESTIONS)
+    return fail(`mais de ${MAX_QUESTIONS} perguntas`);
 
   const items = rawItems.map(validateItem);
-  const questions = rawQuestions.map((question) => validateQuestion(question, items.length));
+  const questions = rawQuestions.map((question) =>
+    validateQuestion(question, items.length),
+  );
 
   return {
     status: questions.length > 0 ? 'precisa_esclarecer' : status,

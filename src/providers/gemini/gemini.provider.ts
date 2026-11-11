@@ -46,7 +46,8 @@ export class GeminiProvider implements LlmProvider {
     process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   ).trim();
   private readonly baseUrl = String(
-    process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',
+    process.env.GEMINI_API_BASE_URL ||
+      'https://generativelanguage.googleapis.com/v1beta',
   )
     .trim()
     .replace(/\/+$/, '');
@@ -87,27 +88,31 @@ export class GeminiProvider implements LlmProvider {
       input.thinkingBudget !== undefined
         ? input.thinkingBudget
         : this.structuredThinkingBudget;
-    const response = await this.request(model, {
-      system_instruction: this.toSystemInstruction(input.systemInstruction),
-      contents: [
-        {
-          parts: [{ text: input.userPrompt }],
+    const response = await this.request(
+      model,
+      {
+        system_instruction: this.toSystemInstruction(input.systemInstruction),
+        contents: [
+          {
+            parts: [{ text: input.userPrompt }],
+          },
+        ],
+        generationConfig: {
+          ...this.toGenerationConfig({
+            ...input,
+            thinkingBudget,
+          }),
+          responseMimeType: 'application/json',
+          responseJsonSchema: input.responseSchema,
         },
-      ],
-      generationConfig: {
-        ...this.toGenerationConfig({
-          ...input,
-          thinkingBudget,
-        }),
-        responseMimeType: 'application/json',
-        responseJsonSchema: input.responseSchema,
       },
-    }, {
-      mode: 'structured',
-      promptChars: String(input.userPrompt || '').length,
-      thinkingBudget,
-      maxOutputTokens: input.maxOutputTokens,
-    });
+      {
+        mode: 'structured',
+        promptChars: String(input.userPrompt || '').length,
+        thinkingBudget,
+        maxOutputTokens: input.maxOutputTokens,
+      },
+    );
 
     const text = this.extractText(response);
     const parsed = this.parseJson(text, response);
@@ -389,12 +394,12 @@ export class GeminiProvider implements LlmProvider {
   private parseJson(text: string, response?: GeminiResponse) {
     try {
       return JSON.parse(text);
-    } catch (_error) {
+    } catch {
       const sanitized = this.sanitizeJsonCandidate(text);
       if (sanitized) {
         try {
           return JSON.parse(sanitized);
-        } catch (_sanitizedError) {
+        } catch {
           // Falls through to the structured error below.
         }
       }

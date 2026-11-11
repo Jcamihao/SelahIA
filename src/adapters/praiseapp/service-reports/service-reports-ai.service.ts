@@ -82,14 +82,17 @@ export class ServiceReportsAiService {
 
     const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
-      systemInstruction: 'Você é Selah IA, estrategista de saúde da igreja e especialista em crescimento e retenção ministerial.',
+      systemInstruction:
+        'Você é Selah IA, estrategista de saúde da igreja e especialista em crescimento e retenção ministerial.',
       responseSchema: CHURCH_HEALTH_SCHEMA,
       validate: validateChurchHealthAnalysis,
       temperature: 0.2,
       thinkingBudget: 0,
     });
 
-    this.logger.log(`[${requestId}] Church health analysis completed score=${result.data.healthScore}`);
+    this.logger.log(
+      `[${requestId}] Church health analysis completed score=${result.data.healthScore}`,
+    );
 
     return {
       ...this.responseMeta(result.model),

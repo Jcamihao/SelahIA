@@ -1,7 +1,22 @@
-import { IsBase64, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBase64,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
-export const MEAL_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-export const MEAL_PHOTO_MEAL_TYPES = ['cafe', 'almoco', 'jantar', 'lanche'] as const;
+export const MEAL_PHOTO_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+export const MEAL_PHOTO_MEAL_TYPES = [
+  'cafe',
+  'almoco',
+  'jantar',
+  'lanche',
+] as const;
 
 export class AnalyzeMealPhotoDto {
   @IsIn(MEAL_PHOTO_MIME_TYPES)

@@ -10,5 +10,8 @@ export const pickUpperEnum = (value: unknown, fallback = 'unknown'): string =>
   isUpperEnum(value) ? value : fallback;
 
 // Motivo de parada do Ollama (ex.: stop, length), que vem em minusculas.
-export const pickReasonToken = (value: unknown, fallback = 'unknown'): string =>
+export const pickReasonToken = (
+  value: unknown,
+  fallback = 'unknown',
+): string =>
   typeof value === 'string' && REASON_TOKEN.test(value) ? value : fallback;

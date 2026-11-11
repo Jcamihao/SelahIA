@@ -4,7 +4,11 @@ type Bucket = { tokens: number; updatedAt: number };
 
 const DEFAULT_LIMIT_PER_MINUTE = 60;
 
-const readLimit = (raw: string | undefined, fallback: number, label: string) => {
+const readLimit = (
+  raw: string | undefined,
+  fallback: number,
+  label: string,
+) => {
   const text = String(raw ?? '').trim();
   if (!text) {
     return fallback;
@@ -41,7 +45,11 @@ export class RateLimiterService {
         }
         this.overrides.set(
           app,
-          readLimit(entry.slice(separator + 1), 0, `SELAH_RATE_LIMITS (${app})`),
+          readLimit(
+            entry.slice(separator + 1),
+            0,
+            `SELAH_RATE_LIMITS (${app})`,
+          ),
         );
       });
   }

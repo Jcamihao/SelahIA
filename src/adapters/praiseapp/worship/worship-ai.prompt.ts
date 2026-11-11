@@ -1,6 +1,9 @@
 export function buildWorshipSetlistSuggestionPrompt(input: any): string {
   const repertoireList = (input.repertoire || [])
-    .map((s: any) => `- ID: ${s.id} | Título: ${s.title} | Autor: ${s.author} | Tom: ${s.key}`)
+    .map(
+      (s: any) =>
+        `- ID: ${s.id} | Título: ${s.title} | Autor: ${s.author} | Tom: ${s.key}`,
+    )
     .join('\n');
 
   return `
@@ -28,7 +31,10 @@ Instruções:
 
 export function buildWorshipRehearsalNotesPrompt(input: any): string {
   const songsList = (input.songs || [])
-    .map((s: any) => `- ${s.title} (${s.key}) | Notas do Líder: ${s.notes || 'Nenhuma'}`)
+    .map(
+      (s: any) =>
+        `- ${s.title} (${s.key}) | Notas do Líder: ${s.notes || 'Nenhuma'}`,
+    )
     .join('\n');
 
   return `

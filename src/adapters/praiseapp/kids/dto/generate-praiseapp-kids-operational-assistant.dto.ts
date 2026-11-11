@@ -1,4 +1,11 @@
-import { IsInt, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class GeneratePraiseAppKidsOperationalAssistantDto {
   @IsObject()

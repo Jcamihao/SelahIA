@@ -32,9 +32,7 @@ export class MealPhotoService {
     };
   }
 
-  async analyze(
-    input: AnalyzeMealPhotoDto,
-  ): Promise<
+  async analyze(input: AnalyzeMealPhotoDto): Promise<
     {
       provider: string;
       version: string;
@@ -58,7 +56,12 @@ export class MealPhotoService {
           {
             parts: [
               { text: prompt },
-              { inline_data: { mime_type: input.mimeType, data: input.imageBase64 } },
+              {
+                inline_data: {
+                  mime_type: input.mimeType,
+                  data: input.imageBase64,
+                },
+              },
             ],
           },
         ],

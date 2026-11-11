@@ -88,9 +88,7 @@ export function validateLumenLifeAssistantResponse(
     !Array.isArray(p.suggestedActions) ||
     !(p.suggestedActions as unknown[]).length
   ) {
-    throw new Error(
-      'Campo obrigatório ausente ou inválido: suggestedActions',
-    );
+    throw new Error('Campo obrigatório ausente ou inválido: suggestedActions');
   }
 
   if (typeof p.focusArea !== 'string' || !String(p.focusArea).trim()) {
@@ -118,10 +116,14 @@ export function validateLumenLifeAssistantResponse(
   return {
     answer: String(p.answer).trim(),
     highlights: (p.highlights as unknown[])
-      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .filter(
+        (item): item is string => typeof item === 'string' && !!item.trim(),
+      )
       .slice(0, LUMEN_LIFE_ASSISTANT_MAX_ITEMS),
     suggestedActions: (p.suggestedActions as unknown[])
-      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .filter(
+        (item): item is string => typeof item === 'string' && !!item.trim(),
+      )
       .slice(0, LUMEN_LIFE_ASSISTANT_MAX_ITEMS),
     focusArea: String(p.focusArea).trim(),
     confidence: p.confidence as LumenLifeAssistantConfidence,
@@ -131,12 +133,16 @@ export function validateLumenLifeAssistantResponse(
         : String(p.disclaimer).trim(),
     reasoning: Array.isArray(p.reasoning)
       ? (p.reasoning as unknown[])
-          .filter((item): item is string => typeof item === 'string' && !!item.trim())
+          .filter(
+            (item): item is string => typeof item === 'string' && !!item.trim(),
+          )
           .slice(0, 4)
       : [],
     evidence: Array.isArray(p.evidence)
       ? (p.evidence as unknown[])
-          .filter((item): item is string => typeof item === 'string' && !!item.trim())
+          .filter(
+            (item): item is string => typeof item === 'string' && !!item.trim(),
+          )
           .slice(0, 5)
       : [],
     confidenceReason:

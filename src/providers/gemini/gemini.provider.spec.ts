@@ -3,7 +3,9 @@ import { ProviderQuotaExceededException } from '../provider-errors';
 import { GeminiProvider } from './gemini.provider';
 
 const okResponse = (text = 'ok') => ({
-  data: { candidates: [{ finishReason: 'STOP', content: { parts: [{ text }] } }] },
+  data: {
+    candidates: [{ finishReason: 'STOP', content: { parts: [{ text }] } }],
+  },
 });
 
 const httpError = (status: number, headers: Record<string, string> = {}) => ({
@@ -183,11 +185,9 @@ describe('GeminiProvider error redaction', () => {
   beforeEach(() => {
     logged = [];
     for (const level of ['log', 'warn', 'error', 'debug', 'verbose'] as const) {
-      jest
-        .spyOn(Logger.prototype, level)
-        .mockImplementation((message: any) => {
-          logged.push(String(message));
-        });
+      jest.spyOn(Logger.prototype, level).mockImplementation((message: any) => {
+        logged.push(String(message));
+      });
     }
   });
 
@@ -211,9 +211,9 @@ describe('GeminiProvider error redaction', () => {
     expect(message).toBe(
       'Gemini request failed status=400 reason=INVALID_ARGUMENT',
     );
-    expect(logged.some((line) => line.includes('reason=INVALID_ARGUMENT'))).toBe(
-      true,
-    );
+    expect(
+      logged.some((line) => line.includes('reason=INVALID_ARGUMENT')),
+    ).toBe(true);
   });
 
   it('nao mostra status que seja texto livre', async () => {
@@ -238,7 +238,9 @@ describe('GeminiProvider error redaction', () => {
       getRequestId: () => 'test-request',
       getSourceApp: () => 'test',
     } as any);
-    (provider as any).httpClient = { post: jest.fn().mockResolvedValue({ data }) };
+    (provider as any).httpClient = {
+      post: jest.fn().mockResolvedValue({ data }),
+    };
     return provider;
   };
 
@@ -259,24 +261,37 @@ describe('GeminiProvider error redaction', () => {
   it('finishReason que seja texto livre nao aparece no log de sucesso', async () => {
     const provider = providerWithResponse({
       candidates: [
-        { finishReason: `texto livre ${MARKER}`, content: { parts: [{ text: 'ok' }] } },
+        {
+          finishReason: `texto livre ${MARKER}`,
+          content: { parts: [{ text: 'ok' }] },
+        },
       ],
     });
 
-    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+    await provider.generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+    });
 
-    expect(logged.some((line) => line.includes('finishReason=unknown'))).toBe(true);
+    expect(logged.some((line) => line.includes('finishReason=unknown'))).toBe(
+      true,
+    );
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
 
   it('finishReason enum valido continua aparecendo no log', async () => {
     const provider = providerWithResponse({
-      candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'ok' }] } }],
+      candidates: [
+        { finishReason: 'STOP', content: { parts: [{ text: 'ok' }] } },
+      ],
     });
 
-    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+    await provider.generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+    });
 
-    expect(logged.some((line) => line.includes('finishReason=STOP'))).toBe(true);
+    expect(logged.some((line) => line.includes('finishReason=STOP'))).toBe(
+      true,
+    );
   });
 
   it('resposta vazia nao repete o texto livre do promptFeedback', async () => {

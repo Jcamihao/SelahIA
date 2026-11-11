@@ -268,7 +268,13 @@ export const PRAISEAPP_KIDS_CHECKIN_DAILY_SUMMARY_SCHEMA = {
     actionItems: { type: 'array', items: { type: 'string' } },
     attentionLevel: { type: 'string' },
   },
-  required: ['headline', 'summaryText', 'highlights', 'actionItems', 'attentionLevel'],
+  required: [
+    'headline',
+    'summaryText',
+    'highlights',
+    'actionItems',
+    'attentionLevel',
+  ],
 };
 
 export const validatePraiseAppKidsCheckinDailySummary = (
@@ -320,7 +326,9 @@ export const validatePraiseAppKidsPedagogicalSequence = (
   input: unknown,
 ): PraiseAppKidsPedagogicalSequence => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Resposta da IA inválida para sequência pedagógica do Kids.');
+    throw new Error(
+      'Resposta da IA inválida para sequência pedagógica do Kids.',
+    );
   }
 
   const payload = input as Record<string, unknown>;
@@ -329,7 +337,11 @@ export const validatePraiseAppKidsPedagogicalSequence = (
     biblicalReference: readRequiredString(payload, 'biblicalReference', 180),
     testamentFocus: readRequiredString(payload, 'testamentFocus', 24),
     continuitySummary: readRequiredString(payload, 'continuitySummary', 800),
-    pedagogicalRationale: readRequiredString(payload, 'pedagogicalRationale', 1000),
+    pedagogicalRationale: readRequiredString(
+      payload,
+      'pedagogicalRationale',
+      1000,
+    ),
     memoryFocus: readRequiredString(payload, 'memoryFocus', 320),
     openingIdea: readRequiredString(payload, 'openingIdea', 500),
     applicationFocus: readRequiredString(payload, 'applicationFocus', 500),
@@ -360,7 +372,9 @@ export const validatePraiseAppKidsWeeklyVerseExpansion = (
   input: unknown,
 ): PraiseAppKidsWeeklyVerseExpansion => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Resposta da IA inválida para expansão do versículo do Kids.');
+    throw new Error(
+      'Resposta da IA inválida para expansão do versículo do Kids.',
+    );
   }
 
   const payload = input as Record<string, unknown>;
@@ -401,7 +415,9 @@ export const validatePraiseAppKidsOperationalAssistant = (
   input: unknown,
 ): PraiseAppKidsOperationalAssistant => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Resposta da IA inválida para assistente operacional do Kids.');
+    throw new Error(
+      'Resposta da IA inválida para assistente operacional do Kids.',
+    );
   }
 
   const payload = input as Record<string, unknown>;
@@ -409,11 +425,24 @@ export const validatePraiseAppKidsOperationalAssistant = (
     assistantSummary: readRequiredString(payload, 'assistantSummary', 1000),
     adaptedFlow: readStringArray(payload, 'adaptedFlow', 8, 260),
     keyAdjustments: readStringArray(payload, 'keyAdjustments', 8, 240),
-    suppliesAdjustments: readStringArray(payload, 'suppliesAdjustments', 8, 200),
+    suppliesAdjustments: readStringArray(
+      payload,
+      'suppliesAdjustments',
+      8,
+      200,
+    ),
     attentionResets: readStringArray(payload, 'attentionResets', 6, 220),
-    noScreenAlternative: readRequiredString(payload, 'noScreenAlternative', 600),
+    noScreenAlternative: readRequiredString(
+      payload,
+      'noScreenAlternative',
+      600,
+    ),
     leaderScript: readRequiredString(payload, 'leaderScript', 700),
-    parentMessageSnippet: readRequiredString(payload, 'parentMessageSnippet', 500),
+    parentMessageSnippet: readRequiredString(
+      payload,
+      'parentMessageSnippet',
+      500,
+    ),
   };
 };
 
@@ -455,13 +484,17 @@ export const validatePraiseAppKidsAgeAdaptations = (
   input: unknown,
 ): PraiseAppKidsAgeAdaptations => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Resposta da IA inválida para adaptação por faixa etária do Kids.');
+    throw new Error(
+      'Resposta da IA inválida para adaptação por faixa etária do Kids.',
+    );
   }
 
   const payload = input as Record<string, unknown>;
   const versionsRaw = Array.isArray(payload.versions) ? payload.versions : [];
   const versions = versionsRaw
-    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object' && !Array.isArray(item)))
+    .filter((item): item is Record<string, unknown> =>
+      Boolean(item && typeof item === 'object' && !Array.isArray(item)),
+    )
     .slice(0, 6)
     .map((item) => ({
       ageRange: readRequiredString(item, 'ageRange', 80),
@@ -506,12 +539,18 @@ export const validatePraiseAppKidsPostClassCommunication = (
   input: unknown,
 ): PraiseAppKidsPostClassCommunication => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Resposta da IA inválida para comunicação pós-aula do Kids.');
+    throw new Error(
+      'Resposta da IA inválida para comunicação pós-aula do Kids.',
+    );
   }
 
   const payload = input as Record<string, unknown>;
   return {
-    suggestedNoticeTitle: readRequiredString(payload, 'suggestedNoticeTitle', 180),
+    suggestedNoticeTitle: readRequiredString(
+      payload,
+      'suggestedNoticeTitle',
+      180,
+    ),
     parentMessage: readRequiredString(payload, 'parentMessage', 1200),
     lessonSummary: readRequiredString(payload, 'lessonSummary', 900),
     weeklyChallenge: readRequiredString(payload, 'weeklyChallenge', 500),
@@ -551,10 +590,18 @@ export const validatePraiseAppKidsEventSuggestion = (
   const payload = input as Record<string, unknown>;
   return {
     suggestedTitle: readRequiredString(payload, 'suggestedTitle', 180),
-    suggestedNoticeTitle: readRequiredString(payload, 'suggestedNoticeTitle', 180),
+    suggestedNoticeTitle: readRequiredString(
+      payload,
+      'suggestedNoticeTitle',
+      180,
+    ),
     description: readRequiredString(payload, 'description', 1400),
     checklist: readStringArray(payload, 'checklist', 8, 220),
-    parentCommunication: readRequiredString(payload, 'parentCommunication', 1400),
+    parentCommunication: readRequiredString(
+      payload,
+      'parentCommunication',
+      1400,
+    ),
     programFlow: readStringArray(payload, 'programFlow', 8, 240),
     locationSuggestion: readRequiredString(payload, 'locationSuggestion', 180),
   };

@@ -73,7 +73,9 @@ export class AgilisWorkspaceAiService {
     maxOutputTokens: number,
   ) {
     const requestId = this.requestContext.getRequestId();
-    this.logger.log(`[${requestId}] Agilis ${label} started promptChars=${userPrompt.length}`);
+    this.logger.log(
+      `[${requestId}] Agilis ${label} started promptChars=${userPrompt.length}`,
+    );
 
     const result = await this.llmProvider.generateStructured({
       userPrompt,
@@ -107,7 +109,9 @@ export class AgilisWorkspaceAiService {
     });
     const answer = result.text.trim();
 
-    this.logger.log(`[${requestId}] Agilis chat completed answerChars=${answer.length}`);
+    this.logger.log(
+      `[${requestId}] Agilis chat completed answerChars=${answer.length}`,
+    );
     return { ...this.responseMeta(result.model), answer };
   }
 
@@ -186,8 +190,12 @@ export class AgilisWorkspaceAiService {
     );
 
     // So se move tarefa de quem esta sobrecarregado para quem tem folga, e nunca mais do que a pessoa tem.
-    const overloaded = new Map(input.overloaded.map((m) => [normalizeName(m.name), m]));
-    const available = new Map(input.available.map((m) => [normalizeName(m.name), m]));
+    const overloaded = new Map(
+      input.overloaded.map((m) => [normalizeName(m.name), m]),
+    );
+    const available = new Map(
+      input.available.map((m) => [normalizeName(m.name), m]),
+    );
     const moves = data.moves.flatMap((move) => {
       const from = overloaded.get(normalizeName(move.from));
       const to = available.get(normalizeName(move.to));
