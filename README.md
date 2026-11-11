@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.7.4-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.8.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -113,7 +113,17 @@ curl http://localhost:3010/health
 ```bash
 npm run build
 npm test -- --runInBand
+npm run test:e2e
 ```
+
+O CI (`.github/workflows/ci.yml`) roda build, testes unitários e e2e em todo push e pull request.
+
+## 🛡️ Operação
+
+- **Validação no boot:** o Selah recusa subir com configuração inválida (variável numérica malformada, URL inválida, `LLM_PROVIDER` desconhecido). Em produção também exige `GEMINI_API_KEY` (provider gemini) e uma chave de API interna.
+- **Shutdown gracioso:** `SIGTERM` espera as requisições em andamento terminarem; o compose de produção dá 50 s (`stop_grace_period`).
+- **Erros do consumidor:** `429` = estourou o rate limit do app no Selah; `503` com `Retry-After` e `reason: PROVIDER_QUOTA_EXCEEDED` = a cota do Gemini acabou; `502` = o provider falhou ou devolveu resposta inválida.
+- **Para quem for trabalhar no código (pessoa ou IA):** leia `HANDOFF.md`.
 
 ## 🔐 Segurança interna
 
@@ -164,6 +174,12 @@ src/
 
 ## 📌 Documentação complementar
 
+- 🧭 Handoff para IAs e novos devs: `HANDOFF.md`
+- 📝 Release notes 2.8.0: `docs/releases/v2.8.0.md`
+- 📝 Release notes 2.7.9: `docs/releases/v2.7.9.md`
+- 📝 Release notes 2.7.2: `docs/releases/v2.7.2.md`
+- 📝 Release notes 2.7.0: `docs/releases/v2.7.0.md`
+- 📝 Release notes 2.6.1: `docs/releases/v2.6.1.md`
 - 📝 Release notes 2.6.0: `docs/releases/v2.6.0.md`
 - 📝 Release notes 2.5.1: `docs/releases/v2.5.1.md`
 - 📝 Release notes 2.5.0: `docs/releases/v2.5.0.md`

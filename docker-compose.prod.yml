@@ -3,6 +3,8 @@ services:
     build:
       context: .
     restart: unless-stopped
+    # Tempo para terminar requisicoes em andamento (chamadas de LLM chegam a 45s) antes do SIGKILL.
+    stop_grace_period: 50s
     env_file:
       - .env.production
     environment:

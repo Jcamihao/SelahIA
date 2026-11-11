@@ -14,6 +14,7 @@ import {
   StructuredGenerationResult,
 } from '../llm-provider.interface';
 import { RequestContextService } from '../../common/logging/request-context.service';
+import { ProviderQuotaExceededException } from '../provider-errors';
 import { isUpperEnum, pickUpperEnum } from '../safe-token';
 
 type GeminiCandidate = {
@@ -314,6 +315,12 @@ export class GeminiProvider implements LlmProvider {
         this.logger.error(
           `[${requestId}] Gemini request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} attempts=${attempt + 1} durationMs=${elapsedMs} reason=${reason}`,
         );
+        if (status === 429) {
+          // Cota estourada: 503 com Retry-After em vez de 502, para o consumidor so esperar.
+          throw new ProviderQuotaExceededException(
+            Number(error?.response?.headers?.['retry-after']),
+          );
+        }
         throw new BadGatewayException(
           `Gemini request failed status=${status || 'n/a'} reason=${reason}`,
         );

@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { assertValidEnvironment } from './common/config/validate-env';
 
 async function loadEnvironment() {
   try {
@@ -16,11 +17,19 @@ async function loadEnvironment() {
 
 async function bootstrap() {
   await loadEnvironment();
+  const serviceName = String(process.env.SELAH_SERVICE_NAME || 'SelahIA');
+  // Falha no boot (e nao na primeira requisicao) quando a configuracao esta errada.
+  assertValidEnvironment().forEach((warning) =>
+    Logger.warn(warning, serviceName),
+  );
   const bodySizeLimit =
     String(process.env.SELAH_BODY_SIZE_LIMIT || '').trim() || '20mb';
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+  // SIGTERM/SIGINT (docker stop, deploy) deixam de cortar requisicoes em andamento: o Nest para de
+  // aceitar conexoes novas e espera as atuais terminarem antes de sair.
+  app.enableShutdownHooks();
   // API servidor-a-servidor: nenhum navegador fala com o Selah, entao nao ha CORS.
   app.use(helmet());
   app.use(json({ limit: bodySizeLimit }));

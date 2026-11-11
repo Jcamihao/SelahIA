@@ -1,4 +1,5 @@
 import { BadGatewayException, Logger } from '@nestjs/common';
+import { ProviderQuotaExceededException } from '../provider-errors';
 import { GeminiProvider } from './gemini.provider';
 
 const okResponse = (text = 'ok') => ({
@@ -90,8 +91,46 @@ describe('GeminiProvider retry', () => {
       createProvider(post).generateTextFromContents({
         contents: [{ parts: [{ text: 'oi' }] }],
       }),
-    ).rejects.toBeInstanceOf(BadGatewayException);
+    ).rejects.toBeInstanceOf(ProviderQuotaExceededException);
     expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers 503 with retryAfterSeconds when the quota stays exhausted after retries', async () => {
+    const post = jest.fn().mockRejectedValue(httpError(429));
+
+    const error: any = await createProvider(post)
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(ProviderQuotaExceededException);
+    expect(error.getStatus()).toBe(503);
+    expect(error.getResponse()).toMatchObject({
+      reason: 'PROVIDER_QUOTA_EXCEEDED',
+      retryAfterSeconds: 60,
+    });
+    expect(post).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses the upstream Retry-After (capped) in the 503 body', async () => {
+    const post = jest
+      .fn()
+      .mockRejectedValue(httpError(429, { 'retry-after': '9999' }));
+
+    const error: any = await createProvider(post)
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e) => e);
+
+    expect(error.getResponse().retryAfterSeconds).toBe(300);
+  });
+
+  it('keeps 502 for other upstream failures (403 is not a quota problem)', async () => {
+    const post = jest.fn().mockRejectedValue(httpError(403));
+
+    await expect(
+      createProvider(post).generateTextFromContents({
+        contents: [{ parts: [{ text: 'oi' }] }],
+      }),
+    ).rejects.toBeInstanceOf(BadGatewayException);
   });
 
   it('caps each attempt timeout to the remaining budget', async () => {

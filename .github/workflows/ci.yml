@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      # Bloqueiam o merge.
+      - name: Build
+        run: npm run build
+      - name: Testes unitarios
+        run: npx jest --ci
+      - name: Testes e2e
+        run: npm run test:e2e -- --ci
+
+  # Informativos: nao bloqueiam. O repo ainda tem ~800 avisos de prettier em 61 arquivos e
+  # vulnerabilidades que so saem com upgrade major do NestJS (ver HANDOFF.md, "Dividas conhecidas").
+  # Quando forem resolvidos, remova o continue-on-error para virarem gate.
+  advisory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Lint (sem --fix)
+        run: npx eslint "{src,test}/**/*.ts"
+        continue-on-error: true
+      - name: Audit das dependencias de producao
+        run: npm audit --omit=dev
+        continue-on-error: true
