@@ -1,7 +1,7 @@
 # HANDOFF — Selah IA
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
-> Última atualização: 2026-11-11, v2.9.0, branch `claude/charming-bohr-b00dys`.
+> Última atualização: 2026-11-11, v2.9.1, branch `claude/charming-bohr-b00dys`.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
@@ -11,7 +11,7 @@ Idioma: README, commits, comentários e mensagens de erro em **português** (sem
 
 ## 2. Comandos
 ```bash
-npm ci
+npm ci                                     # Node >= 20.11 (Nest 11 exige >= 20)
 npm run build                              # nest build
 npx jest                                   # 339 unitarios (rootDir=src, *.spec.ts)
 npm run test:e2e                           # 17 e2e (test/*.e2e-spec.ts, AppModule real; so o provider e falso)
@@ -61,17 +61,18 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 7. **Só falha transitória do provedor abre o circuit breaker** (`ProviderUpstreamException.transient`): resposta inválida, 4xx e cota **não** abrem. Se criar um provider novo, marque `transient` direito.
 8. Mudou comportamento visível para consumidores? Bump de versão em `package.json`, nota em `docs/releases/vX.Y.Z.md` e linha no README.
 
-## 5. Estado atual (v2.9.0)
+## 5. Estado atual (v2.9.1)
 - Build ok, lint limpo (eslint + prettier), **339 unitários e 17 e2e passando** (verificado nesta sessão). O lint é gate do CI; rode `npx eslint "{src,test}/**/*.ts"` antes de commitar e `npx prettier --write` nos arquivos que tocar.
-- **2.8.0:** CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, cota do Gemini como 503 + `Retry-After`, formatação de todo o código. **2.9.0:** limite de concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy`. Detalhes e impacto em `docs/releases/v2.8.0.md` e `v2.9.0.md`.
-- **Verificado com o processo real** (`node dist/main` + Gemini falso programável): shutdown com requisição em andamento (v2.8.0); circuito, fila cheia, nova tentativa, cota e métricas (v2.9.0).
+- **2.8.0:** CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, cota do Gemini como 503 + `Retry-After`, formatação de todo o código. **2.9.0:** limite de concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy`. **2.9.1:** NestJS 10 → 11 (Express 5) e `npm audit fix`: `npm audit --omit=dev` de 10 vulnerabilidades (1 crítica) para **0**. Detalhes e impacto em `docs/releases/v2.8.0.md`, `v2.9.0.md` e `v2.9.1.md`.
+- **Verificado com o processo real** (`node dist/main` + Gemini falso programável): shutdown com requisição em andamento (v2.8.0); circuito, fila cheia, nova tentativa, cota e métricas (v2.9.0); Express 5, rotas e shutdown de novo no Nest 11 (v2.9.1).
 - Produção: Docker Compose (`docker-compose.prod.yml`) em `127.0.0.1:3020` atrás do nginx (`deploy/nginx/selah.conf`, `selah.financelumen.tech`). O `Dockerfile` já tem `HEALTHCHECK` e roda como usuário `node`.
 - **Nada foi deployado nem pushado para `master` por esta sessão.** O trabalho está na branch `claude/charming-bohr-b00dys`.
 
 ## 6. Dívidas conhecidas (não resolvidas)
 | Item | Detalhe |
 |---|---|
-| **`npm audit`** | 10 vulnerabilidades (1 crítica, 4 altas) em dependências de produção via `express`/`qs`; a correção do audit exige `@nestjs/platform-express@12` (major). Não tentado. |
+| **`npm audit` só em devDependencies** | Produção: **0** (e é gate do CI em nível alto+). Dev: 16 achados baixos/moderados em ferramental (`@nestjs/cli` em build, ESLint, Jest), fora da imagem. Os fixes que o npm sugere são **downgrades** (Jest 25, ts-jest 25, typescript-eslint 6) ou o CLI 12 ESM: não aplicar com `--force`. |
+| **Nest 12 não migrado** | O Nest 12 é **ESM-only** (`"type": "module"`, Node >= 20): exigiria migrar módulos, `tsconfig` e Jest. Ficamos no 11.2.9 (CommonJS), que está na linha `legacy` do npm; **não verifiquei até quando recebe correções**. Reavaliar antes de o 11 sair de suporte. |
 | **Estado em memória, por instância** | Rate limit, limite de concorrência, circuit breaker e teto diário de tokens zeram a cada restart e valem por réplica. Redis só se houver mais de uma réplica. |
 | **Psicologia** | Decisão pendente: rascunho **fiel** à nota ou **reescrito** (hoje sai do tamanho da nota). Não verificado: anamnese colada sem quebras de linha, autolesão em PSICANALISE, notas perto de 8.000 caracteres. |
 | **Consumidores e os novos códigos** | Não foi verificado como Lumen, PraiseApp, Agilis, BalancoGordura e Notta.psi tratam 503 (`PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_BUSY`, `PROVIDER_UNAVAILABLE`) e 429 com corpo (`DAILY_TOKEN_BUDGET_EXCEEDED`). Antes a cota era 502. |
@@ -83,7 +84,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 ## 7. Não verificado / não lido
 - Os prompts e services de **Kids, Louvor, Consolidação, Relatórios, Lumen e Agilis** foram só mapeados por rotas, não lidos.
 - Nada foi testado contra o **Gemini real** nesta sessão (só mocks e um Gemini falso local). Isso inclui a nova tentativa em JSON inválido: o comportamento com saídas inválidas reais do Gemini não foi observado.
-- O nginx e o compose de produção não foram executados.
+- O nginx e o compose de produção não foram executados, e a **imagem Docker não foi construída** (sem Docker aqui; só `npm ci --omit=dev` a partir do lock foi reproduzido).
 
 ## 8. Decisões de design discutidas (não implementadas)
 - **RAG / MCP:** o dono não tem caso de uso hoje (apps são locais e pequenos). Se retomar: módulo `rag` **desligado por padrão**, interfaces `EmbeddingProvider` / `VectorStore` / `RetrievalService`, índice isolado por app (vem da chave de API), piloto em **PraiseApp Kids** (`next-sequence`), **sem MCP** na primeira fase. O `GeminiProvider` não tem function calling nem embeddings hoje. Fora de escopo: dados clínicos de psicologia.
@@ -91,6 +92,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 ## 9. Histórico
 | Versão | O que entrou |
 |---|---|
+| 2.9.1 | NestJS 10 → 11 (Express 5), `npm audit fix` (proxy-addr crítico), Node >= 20.11, audit de produção como gate do CI |
 | 2.9.0 | Concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy` |
 | 2.8.0 | Formatação de todo o código com prettier (commit só de estilo) e lint como gate do CI; CI, shutdown gracioso, validação de env no boot, quota do Gemini como 503 + `Retry-After` |
 | 2.7.9 | Verificação com Gemini real do adapter psicologia (sem código) |

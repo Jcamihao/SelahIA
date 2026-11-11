@@ -30,19 +30,8 @@ jobs:
         run: npx jest --ci
       - name: Testes e2e
         run: npm run test:e2e -- --ci
-
-  # Informativo: nao bloqueia. As vulnerabilidades so saem com upgrade major do NestJS
-  # (ver HANDOFF.md, "Dividas conhecidas"). Remova o continue-on-error quando forem resolvidas.
-  advisory:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
+      # Dependencias de producao (as que vao para a imagem). Bloqueia em nivel alto ou critico.
+      # O audit de devDependencies nao entra: o que sobra la e ferramental (jest, eslint, nest cli)
+      # e os "fixes" que o npm sugere sao downgrades (ver HANDOFF.md, "Dividas conhecidas").
       - name: Audit das dependencias de producao
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --audit-level=high
