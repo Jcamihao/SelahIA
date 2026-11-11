@@ -22,6 +22,8 @@ jobs:
       - run: npm ci
 
       # Bloqueiam o merge.
+      - name: Lint (eslint + prettier, sem --fix)
+        run: npx eslint "{src,test}/**/*.ts"
       - name: Build
         run: npm run build
       - name: Testes unitarios
@@ -29,9 +31,8 @@ jobs:
       - name: Testes e2e
         run: npm run test:e2e -- --ci
 
-  # Informativos: nao bloqueiam. O repo ainda tem ~800 avisos de prettier em 61 arquivos e
-  # vulnerabilidades que so saem com upgrade major do NestJS (ver HANDOFF.md, "Dividas conhecidas").
-  # Quando forem resolvidos, remova o continue-on-error para virarem gate.
+  # Informativo: nao bloqueia. As vulnerabilidades so saem com upgrade major do NestJS
+  # (ver HANDOFF.md, "Dividas conhecidas"). Remova o continue-on-error quando forem resolvidas.
   advisory:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -43,9 +44,5 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Lint (sem --fix)
-        run: npx eslint "{src,test}/**/*.ts"
-        continue-on-error: true
       - name: Audit das dependencias de producao
         run: npm audit --omit=dev
-        continue-on-error: true

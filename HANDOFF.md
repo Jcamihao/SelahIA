@@ -58,7 +58,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 7. Mudou comportamento visível para consumidores? Bump de versão em `package.json`, nota em `docs/releases/vX.Y.Z.md` e linha no README.
 
 ## 5. Estado atual (v2.8.0)
-- Build ok, **241 unitários e 8 e2e passando** (verificado nesta sessão).
+- Build ok, **lint limpo (eslint + prettier), 241 unitários e 8 e2e passando** (verificado nesta sessão). O lint agora é gate do CI; rode `npx eslint "{src,test}/**/*.ts"` antes de commitar e formate com `npx prettier --write` nos arquivos que tocar.
 - Entregue em 2.8.0: CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, quota do Gemini como 503 + `Retry-After`. Detalhes e impacto em `docs/releases/v2.8.0.md`.
 - Produção: Docker Compose (`docker-compose.prod.yml`) em `127.0.0.1:3020` atrás do nginx (`deploy/nginx/selah.conf`, `selah.financelumen.tech`). O `Dockerfile` já tem `HEALTHCHECK` e roda como usuário `node`.
 - **Nada foi deployado nem pushado para `master` por esta sessão.** O trabalho está na branch `claude/charming-bohr-b00dys`.
@@ -66,7 +66,6 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 ## 6. Dívidas conhecidas (não resolvidas)
 | Item | Detalhe |
 |---|---|
-| **Lint/prettier** | `eslint` reporta 817 erros (813 são formatação em 61 arquivos; 4 são `no-unused-vars` em `catch (_error)` no gemini provider e no lumen receipt-parser). Corrigir exige reformatar tudo em um commit só. No CI o lint é informativo. |
 | **`npm audit`** | 10 vulnerabilidades (1 crítica, 4 altas) em dependências de produção via `express`/`qs`; a correção do audit exige `@nestjs/platform-express@12` (major). Não tentado. |
 | **Rate limit em memória** | Vale para uma instância; zera a cada restart. Redis só se houver mais de uma réplica. |
 | **Sem proteção contra provider lento** | Não há limite global de requisições em voo nem circuit breaker; Gemini lento = até 45 s por requisição acumulando. |
@@ -88,7 +87,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 ## 9. Histórico
 | Versão | O que entrou |
 |---|---|
-| 2.8.0 | CI, shutdown gracioso, validação de env no boot, quota do Gemini como 503 + `Retry-After` |
+| 2.8.0 | Formatação de todo o código com prettier (commit só de estilo) e lint como gate do CI; CI, shutdown gracioso, validação de env no boot, quota do Gemini como 503 + `Retry-After` |
 | 2.7.9 | Verificação com Gemini real do adapter psicologia (sem código) |
 | 2.7.x | Psicologia: endurecimento do prompt, erro do upstream fora de log/502, `safe-token` |
 | 2.6.x | BalancoGordura `meal-photo` |
