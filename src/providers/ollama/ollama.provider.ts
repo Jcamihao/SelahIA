@@ -1,4 +1,5 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import { ProviderUpstreamException } from '../provider-errors';
 import axios, { AxiosInstance } from 'axios';
 import {
   GenerateTextResult,
@@ -54,30 +55,59 @@ export class OllamaProvider implements LlmProvider {
     input: StructuredGenerationInput<T>,
   ): Promise<StructuredGenerationResult<T>> {
     const model = this.resolveModel(input.model);
-    const messages = this.buildMessages(input.systemInstruction, input.userPrompt);
+    const messages = this.buildMessages(
+      input.systemInstruction,
+      input.userPrompt,
+    );
     const content = await this.chat(
       model,
       messages,
-      { temperature: input.temperature, topP: input.topP, numPredict: input.maxOutputTokens, format: 'json' },
-      { mode: 'structured', promptChars: String(input.userPrompt || '').length },
+      {
+        temperature: input.temperature,
+        topP: input.topP,
+        numPredict: input.maxOutputTokens,
+        format: 'json',
+      },
+      {
+        mode: 'structured',
+        promptChars: String(input.userPrompt || '').length,
+      },
     );
     const parsed = this.parseJson(content);
-    return { data: input.validate(parsed), text: content, model, raw: { content } };
+    return {
+      data: input.validate(parsed),
+      text: content,
+      model,
+      raw: { content },
+    };
   }
 
   async generateStructuredFromContents<T>(
     input: StructuredGenerationFromContentsInput<T>,
   ): Promise<StructuredGenerationResult<T>> {
     const model = this.resolveModel(input.model);
-    const messages = this.contentsToMessages(input.systemInstruction, input.contents);
+    const messages = this.contentsToMessages(
+      input.systemInstruction,
+      input.contents,
+    );
     const content = await this.chat(
       model,
       messages,
-      { temperature: input.temperature, topP: input.topP, numPredict: input.maxOutputTokens, format: 'json' },
+      {
+        temperature: input.temperature,
+        topP: input.topP,
+        numPredict: input.maxOutputTokens,
+        format: 'json',
+      },
       { mode: 'structured', promptChars: Number(input.promptChars || 0) },
     );
     const parsed = this.parseJson(content);
-    return { data: input.validate(parsed), text: content, model, raw: { content } };
+    return {
+      data: input.validate(parsed),
+      text: content,
+      model,
+      raw: { content },
+    };
   }
 
   async generateTextFromContents(input: {
@@ -91,11 +121,18 @@ export class OllamaProvider implements LlmProvider {
     promptChars?: number;
   }): Promise<GenerateTextResult> {
     const model = this.resolveModel(input.model);
-    const messages = this.contentsToMessages(input.systemInstruction, input.contents);
+    const messages = this.contentsToMessages(
+      input.systemInstruction,
+      input.contents,
+    );
     const content = await this.chat(
       model,
       messages,
-      { temperature: input.temperature, topP: input.topP, numPredict: input.maxOutputTokens },
+      {
+        temperature: input.temperature,
+        topP: input.topP,
+        numPredict: input.maxOutputTokens,
+      },
       { mode: 'text', promptChars: Number(input.promptChars || 0) },
     );
     return { text: content, model, raw: { content } };
@@ -105,7 +142,10 @@ export class OllamaProvider implements LlmProvider {
     return String(model || this.defaultModel).trim() || this.defaultModel;
   }
 
-  private buildMessages(systemInstruction?: string, userPrompt?: string): OllamaMessage[] {
+  private buildMessages(
+    systemInstruction?: string,
+    userPrompt?: string,
+  ): OllamaMessage[] {
     const messages: OllamaMessage[] = [];
     const system = String(systemInstruction || '').trim();
     if (system) messages.push({ role: 'system', content: system });
@@ -124,7 +164,8 @@ export class OllamaProvider implements LlmProvider {
 
     for (const item of contents) {
       const rawRole = String(item.role || 'user').trim();
-      const role: OllamaMessage['role'] = rawRole === 'model' ? 'assistant' : 'user';
+      const role: OllamaMessage['role'] =
+        rawRole === 'model' ? 'assistant' : 'user';
       const parts = (item.parts as Array<Record<string, unknown>>) || [];
 
       const text = parts
@@ -134,7 +175,9 @@ export class OllamaProvider implements LlmProvider {
         .trim();
 
       const images = parts
-        .map((p) => (p?.inline_data as Record<string, unknown> | undefined)?.data)
+        .map(
+          (p) => (p?.inline_data as Record<string, unknown> | undefined)?.data,
+        )
         .filter((d): d is string => typeof d === 'string' && d.length > 0);
 
       if (text || images.length > 0) {
@@ -163,9 +206,11 @@ export class OllamaProvider implements LlmProvider {
     const startedAt = Date.now();
 
     const ollamaOptions: Record<string, unknown> = {};
-    if (options.temperature !== undefined) ollamaOptions.temperature = options.temperature;
+    if (options.temperature !== undefined)
+      ollamaOptions.temperature = options.temperature;
     if (options.topP !== undefined) ollamaOptions.top_p = options.topP;
-    if (options.numPredict !== undefined) ollamaOptions.num_predict = options.numPredict;
+    if (options.numPredict !== undefined)
+      ollamaOptions.num_predict = options.numPredict;
 
     const payload: Record<string, unknown> = {
       model,
@@ -211,8 +256,10 @@ export class OllamaProvider implements LlmProvider {
       this.logger.error(
         `[${requestId}] Ollama request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} durationMs=${durationMs} reason=${code}`,
       );
-      throw new BadGatewayException(
+      // Sem resposta HTTP (Ollama fora do ar) ou 5xx e transitorio; 4xx nao.
+      throw new ProviderUpstreamException(
         `Ollama request failed status=${status || 'n/a'} reason=${code}`,
+        !status || status >= 500,
       );
     }
   }

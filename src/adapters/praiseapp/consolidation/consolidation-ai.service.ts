@@ -14,13 +14,16 @@ import {
 
 @Injectable()
 export class ConsolidationAiService {
-  constructor(@Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider) {}
+  constructor(
+    @Inject(LLM_PROVIDER_TOKEN) private readonly llmProvider: LlmProvider,
+  ) {}
 
   async analyzeSentiment(input: any) {
     const prompt = buildConsolidationSentimentPrompt(input);
     const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
-      systemInstruction: 'Você é Selah IA, assistente de acolhimento ministerial.',
+      systemInstruction:
+        'Você é Selah IA, assistente de acolhimento ministerial.',
       responseSchema: CONSOLIDATION_SENTIMENT_SCHEMA,
       validate: validateConsolidationSentiment,
     });
@@ -31,7 +34,8 @@ export class ConsolidationAiService {
     const prompt = buildConsolidationPlaybookPrompt(input);
     const result = await this.llmProvider.generateStructured({
       userPrompt: prompt,
-      systemInstruction: 'Você é Selah IA, mentor de pastoreio e especialista em acolhimento e maturidade cristã.',
+      systemInstruction:
+        'Você é Selah IA, mentor de pastoreio e especialista em acolhimento e maturidade cristã.',
       responseSchema: CONSOLIDATION_PLAYBOOK_SCHEMA,
       validate: validateConsolidationPlaybook,
     });

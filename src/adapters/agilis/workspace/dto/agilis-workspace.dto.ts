@@ -322,4 +322,3 @@ export class AgilisWorkloadRedistributionDto {
   @Type(() => AgilisWorkloadMemberDto)
   available: AgilisWorkloadMemberDto[];
 }
-

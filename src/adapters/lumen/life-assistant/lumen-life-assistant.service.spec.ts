@@ -79,10 +79,7 @@ describe('LumenLifeAssistantService', () => {
       getRequestId: jest.fn().mockReturnValue('test-request'),
     } as unknown as RequestContextService;
 
-    return new LumenLifeAssistantService(
-      llmProvider,
-      requestContext,
-    );
+    return new LumenLifeAssistantService(llmProvider, requestContext);
   };
 
   it('retries when the first answer is generic and accepts the second concrete response', async () => {

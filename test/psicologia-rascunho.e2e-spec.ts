@@ -6,10 +6,17 @@ import { LLM_PROVIDER_TOKEN } from './../src/providers/provider.tokens';
 
 describe('POST /v1/adapters/psicologia/rascunho/gerar (e2e)', () => {
   const CHAVE = 'a'.repeat(32);
-  const corpo = { tipoDocumento: 'evolucao', abordagem: 'TCC', textoAnonimizado: 'texto' };
-  const generateStructured = jest
-    .fn()
-    .mockResolvedValue({ data: { rascunho: 'ok' }, text: '{}', model: 'fake', raw: {} });
+  const corpo = {
+    tipoDocumento: 'evolucao',
+    abordagem: 'TCC',
+    textoAnonimizado: 'texto',
+  };
+  const generateStructured = jest.fn().mockResolvedValue({
+    data: { rascunho: 'ok' },
+    text: '{}',
+    model: 'fake',
+    raw: {},
+  });
   let app: INestApplication;
   let chavesAnteriores: string | undefined;
 
@@ -17,14 +24,20 @@ describe('POST /v1/adapters/psicologia/rascunho/gerar (e2e)', () => {
     // Sem chaves configuradas o guard libera tudo fora de producao.
     chavesAnteriores = process.env.SELAH_APP_KEYS;
     process.env.SELAH_APP_KEYS = `NottaPsiBack:${CHAVE}`;
-    const moduleFixture = await Test.createTestingModule({ imports: [AppModule] })
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    })
       .overrideProvider(LLM_PROVIDER_TOKEN)
       .useValue({ generateStructured })
       .compile();
     app = moduleFixture.createNestApplication();
     // Mesmo pipe global do main.ts: sem ele o 400 do DTO nao existe no teste.
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     await app.init();
   });
@@ -74,15 +87,18 @@ describe('POST /v1/adapters/psicologia/rascunho/gerar (e2e)', () => {
   it.each([
     ['abordagem invalida', { abordagem: 'GESTALT' }, 'abordagem'],
     ['textoAnonimizado vazio', { textoAnonimizado: '' }, 'textoAnonimizado'],
-  ])('responde 400 sem chamar o modelo: %s', async (_nome, alteracao, campo) => {
-    const response = await request(app.getHttpServer())
-      .post('/v1/adapters/psicologia/rascunho/gerar')
-      .set('x-selah-api-key', CHAVE)
-      .send({ ...corpo, ...alteracao });
-    expect(response.status).toBe(400);
-    expect(response.body.message).toEqual(
-      expect.arrayContaining([expect.stringContaining(campo)]),
-    );
-    expect(generateStructured).not.toHaveBeenCalled();
-  });
+  ])(
+    'responde 400 sem chamar o modelo: %s',
+    async (_nome, alteracao, campo) => {
+      const response = await request(app.getHttpServer())
+        .post('/v1/adapters/psicologia/rascunho/gerar')
+        .set('x-selah-api-key', CHAVE)
+        .send({ ...corpo, ...alteracao });
+      expect(response.status).toBe(400);
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([expect.stringContaining(campo)]),
+      );
+      expect(generateStructured).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -62,7 +62,8 @@ Modo de releitura:
 export const buildLumenReceiptParserPrompt = (
   input: ParseLumenReceiptDto,
   mode: ReceiptPromptMode = 'default',
-) => `
+) =>
+  `
 Contexto:
 - Produto: LUMEN
 - Tarefa: ler uma foto de nota fiscal, cupom ou comprovante de compra e devolver dados estruturados para registro financeiro.

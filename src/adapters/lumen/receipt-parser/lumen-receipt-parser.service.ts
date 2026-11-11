@@ -1,4 +1,9 @@
-import { BadGatewayException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { LlmProvider } from '../../../providers/llm-provider.interface';
 import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
@@ -28,9 +33,7 @@ export class LumenReceiptParserService {
     };
   }
 
-  async parse(
-    input: ParseLumenReceiptDto,
-  ): Promise<
+  async parse(input: ParseLumenReceiptDto): Promise<
     {
       provider: string;
       version: string;
@@ -126,7 +129,7 @@ export class LumenReceiptParserService {
   private parseJsonCandidate(text: string) {
     try {
       return JSON.parse(text);
-    } catch (_error) {
+    } catch {
       const normalized = String(text || '').trim();
       const fencedMatch = normalized.match(/```(?:json)?\s*([\s\S]*?)```/i);
       const candidate = fencedMatch?.[1]?.trim() || normalized;
@@ -135,8 +138,10 @@ export class LumenReceiptParserService {
 
       if (firstObjectIndex !== -1 && lastObjectIndex > firstObjectIndex) {
         try {
-          return JSON.parse(candidate.slice(firstObjectIndex, lastObjectIndex + 1));
-        } catch (_nestedError) {
+          return JSON.parse(
+            candidate.slice(firstObjectIndex, lastObjectIndex + 1),
+          );
+        } catch {
           // Falls through to the final error below.
         }
       }
@@ -176,20 +181,30 @@ export class LumenReceiptParserService {
       taxAmount: stronger.taxAmount ?? weaker.taxAmount,
       currency: stronger.currency || weaker.currency,
       confidence:
-        this.scoreConfidence(stronger.confidence) >= this.scoreConfidence(weaker.confidence)
+        this.scoreConfidence(stronger.confidence) >=
+        this.scoreConfidence(weaker.confidence)
           ? stronger.confidence
           : weaker.confidence,
       qrCodeDetected: stronger.qrCodeDetected || weaker.qrCodeDetected,
       qrCodeText: stronger.qrCodeText || weaker.qrCodeText,
-      notes: Array.from(new Set([...stronger.notes, ...weaker.notes])).slice(0, 6),
+      notes: Array.from(new Set([...stronger.notes, ...weaker.notes])).slice(
+        0,
+        6,
+      ),
       rawTextExcerpt: stronger.rawTextExcerpt || weaker.rawTextExcerpt,
       purchaseSummary: stronger.purchaseSummary || weaker.purchaseSummary,
       purchaseMission: stronger.purchaseMission || weaker.purchaseMission,
       spendingSignals: Array.from(
-        new Set([...(stronger.spendingSignals || []), ...(weaker.spendingSignals || [])]),
+        new Set([
+          ...(stronger.spendingSignals || []),
+          ...(weaker.spendingSignals || []),
+        ]),
       ).slice(0, 5),
       followUpActions: Array.from(
-        new Set([...(stronger.followUpActions || []), ...(weaker.followUpActions || [])]),
+        new Set([
+          ...(stronger.followUpActions || []),
+          ...(weaker.followUpActions || []),
+        ]),
       ).slice(0, 5),
       items: stronger.items.length ? stronger.items : weaker.items,
     };

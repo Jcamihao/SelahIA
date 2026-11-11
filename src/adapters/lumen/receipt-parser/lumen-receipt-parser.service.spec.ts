@@ -33,14 +33,23 @@ const completeReceipt = {
   followUpActions: [],
   items: [
     { name: 'Arroz 5kg', qty: 1, unit: 25, total: 25, category: 'Alimentacao' },
-    { name: 'Detergente', qty: 2, unit: 8.75, total: 17.5, category: 'Limpeza' },
+    {
+      name: 'Detergente',
+      qty: 2,
+      unit: 8.75,
+      total: 17.5,
+      category: 'Limpeza',
+    },
   ],
 };
 
 const createService = (responses: string[]) => {
   const generateTextFromContents = jest.fn();
   responses.forEach((text) =>
-    generateTextFromContents.mockResolvedValueOnce({ text, model: 'test-model' }),
+    generateTextFromContents.mockResolvedValueOnce({
+      text,
+      model: 'test-model',
+    }),
   );
   const service = new LumenReceiptParserService(
     { generateTextFromContents } as any,
@@ -191,7 +200,8 @@ describe('validateLumenReceiptParseResponse', () => {
 
   it('normalizes document types from Brazilian fiscal vocabulary', () => {
     const typeOf = (documentType: unknown) =>
-      validateLumenReceiptParseResponse({ total: 1, documentType }).documentType;
+      validateLumenReceiptParseResponse({ total: 1, documentType })
+        .documentType;
 
     expect(typeOf('DANFE NFC-e')).toBe('nfce');
     expect(typeOf('CF-e')).toBe('sat');
@@ -249,8 +259,8 @@ describe('buildLumenReceiptParserPrompt', () => {
   });
 
   it('adds the re-read block only in merchant_items mode', () => {
-    expect(buildLumenReceiptParserPrompt(input as any, 'merchant_items')).toContain(
-      'Modo de releitura',
-    );
+    expect(
+      buildLumenReceiptParserPrompt(input as any, 'merchant_items'),
+    ).toContain('Modo de releitura');
   });
 });

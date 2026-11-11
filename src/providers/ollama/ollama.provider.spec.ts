@@ -1,4 +1,5 @@
 import { BadGatewayException, Logger } from '@nestjs/common';
+import { ProviderUpstreamException } from '../provider-errors';
 import { OllamaProvider } from './ollama.provider';
 
 // Erro do upstream nao pode vazar texto livre (pode repetir conteudo da requisicao) para log nem 502.
@@ -25,11 +26,9 @@ describe('OllamaProvider error redaction', () => {
   beforeEach(() => {
     logged = [];
     for (const level of ['log', 'warn', 'error', 'debug', 'verbose'] as const) {
-      jest
-        .spyOn(Logger.prototype, level)
-        .mockImplementation((message: any) => {
-          logged.push(String(message));
-        });
+      jest.spyOn(Logger.prototype, level).mockImplementation((message: any) => {
+        logged.push(String(message));
+      });
     }
   });
 
@@ -42,7 +41,9 @@ describe('OllamaProvider error redaction', () => {
     });
 
     expect(error).toBeInstanceOf(BadGatewayException);
-    expect(error.message).toBe('Ollama request failed status=500 reason=unknown');
+    expect(error.message).toBe(
+      'Ollama request failed status=500 reason=unknown',
+    );
     expect(error.message).not.toContain(MARKER);
     expect(logged.length).toBeGreaterThan(0);
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
@@ -60,7 +61,9 @@ describe('OllamaProvider error redaction', () => {
   it('codigo que seja texto livre nao aparece', async () => {
     const error = await run({ code: `texto livre ${MARKER}`, message: MARKER });
 
-    expect(error.message).toBe('Ollama request failed status=n/a reason=unknown');
+    expect(error.message).toBe(
+      'Ollama request failed status=n/a reason=unknown',
+    );
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
 
@@ -69,7 +72,9 @@ describe('OllamaProvider error redaction', () => {
       getRequestId: () => 'test-request',
       getSourceApp: () => 'test',
     } as any);
-    (provider as any).httpClient = { post: jest.fn().mockResolvedValue({ data }) };
+    (provider as any).httpClient = {
+      post: jest.fn().mockResolvedValue({ data }),
+    };
     return provider;
   };
 
@@ -83,7 +88,9 @@ describe('OllamaProvider error redaction', () => {
       .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
       .catch((e: Error) => e);
 
-    expect((error as Error).message).toBe('Ollama retornou resposta vazia. doneReason=unknown');
+    expect((error as Error).message).toBe(
+      'Ollama retornou resposta vazia. doneReason=unknown',
+    );
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
 
@@ -93,20 +100,64 @@ describe('OllamaProvider error redaction', () => {
       done_reason: `texto livre ${MARKER}`,
     });
 
-    await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+    await provider.generateTextFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+    });
 
-    expect(logged.some((line) => line.includes('doneReason=unknown'))).toBe(true);
+    expect(logged.some((line) => line.includes('doneReason=unknown'))).toBe(
+      true,
+    );
     expect(logged.filter((line) => line.includes(MARKER))).toEqual([]);
   });
 
   it('done_reason em minusculas do Ollama (stop, length) continua aparecendo', async () => {
     for (const reason of ['stop', 'length']) {
       logged.length = 0;
-      const provider = providerWithResponse({ message: { content: 'ok' }, done_reason: reason });
+      const provider = providerWithResponse({
+        message: { content: 'ok' },
+        done_reason: reason,
+      });
 
-      await provider.generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] });
+      await provider.generateTextFromContents({
+        contents: [{ parts: [{ text: 'oi' }] }],
+      });
 
-      expect(logged.some((line) => line.includes(`doneReason=${reason}`))).toBe(true);
+      expect(logged.some((line) => line.includes(`doneReason=${reason}`))).toBe(
+        true,
+      );
     }
+  });
+});
+
+describe('OllamaProvider transient flag (circuit breaker)', () => {
+  const failWith = (error: unknown) => {
+    const provider = new OllamaProvider({
+      getRequestId: () => 'r',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockRejectedValue(error) };
+    jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    return provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e) => e);
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('Ollama fora do ar (sem resposta HTTP) conta como transitorio', async () => {
+    const error = await failWith({ code: 'ECONNREFUSED', message: 'x' });
+    expect(error).toBeInstanceOf(ProviderUpstreamException);
+    expect(error.transient).toBe(true);
+    expect(error.getStatus()).toBe(502);
+  });
+
+  it('5xx conta como transitorio e 4xx nao', async () => {
+    expect((await failWith({ response: { status: 503 } })).transient).toBe(
+      true,
+    );
+    expect((await failWith({ response: { status: 404 } })).transient).toBe(
+      false,
+    );
   });
 });

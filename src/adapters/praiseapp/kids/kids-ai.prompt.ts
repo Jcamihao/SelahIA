@@ -8,7 +8,9 @@ import { GeneratePraiseAppKidsPostClassCommunicationDto } from './dto/generate-p
 import { GeneratePraiseAppKidsEventSuggestionDto } from './dto/generate-praiseapp-kids-event-suggestion.dto';
 
 const listBlock = (title: string, items?: string[]) => {
-  const normalizedItems = (items || []).map((item) => String(item || '').trim()).filter(Boolean);
+  const normalizedItems = (items || [])
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
   if (!normalizedItems.length) {
     return `${title}: nenhum item relevante informado.`;
   }
@@ -21,7 +23,8 @@ const keyedListBlock = (
   itemFormatter?: (item: Record<string, unknown>, index: number) => string,
 ) => {
   const normalizedItems = (items || []).filter(
-    (item): item is Record<string, unknown> => Boolean(item && typeof item === 'object' && !Array.isArray(item)),
+    (item): item is Record<string, unknown> =>
+      Boolean(item && typeof item === 'object' && !Array.isArray(item)),
   );
   if (!normalizedItems.length) {
     return `${title}: nenhum item relevante informado.`;
@@ -51,13 +54,17 @@ const lessonBlock = (title: string, lesson?: Record<string, unknown>) => {
       ? lesson
       : {};
   const lessonFlow = Array.isArray(payload.lessonFlow)
-    ? payload.lessonFlow.map((item) => String(item || '').trim()).filter(Boolean)
+    ? payload.lessonFlow
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
     : [];
   const supplies = Array.isArray(payload.supplies)
     ? payload.supplies.map((item) => String(item || '').trim()).filter(Boolean)
     : [];
   const leaderTips = Array.isArray(payload.leaderTips)
-    ? payload.leaderTips.map((item) => String(item || '').trim()).filter(Boolean)
+    ? payload.leaderTips
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
     : [];
 
   return `
@@ -80,14 +87,18 @@ ${title}:
 export const buildPraiseAppKidsLessonPlanPrompt = (
   input: GeneratePraiseAppKidsLessonPlanDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const ageRange = String(input.ageRangeLabel || '5-7 anos').trim();
   const biblicalReference = String(input.biblicalReference || '').trim();
   const theme = String(input.theme || '').trim();
   const lessonObjective = String(input.lessonObjective || '').trim();
   const durationMin = Number(input.durationMin || 35);
   const additionalContext = String(input.additionalContext || '').trim();
-  const weeklyVerseReference = String(input.activeWeeklyVerseReference || '').trim();
+  const weeklyVerseReference = String(
+    input.activeWeeklyVerseReference || '',
+  ).trim();
   const weeklyVerseText = String(input.activeWeeklyVerseText || '').trim();
 
   return `
@@ -128,7 +139,9 @@ ${additionalContext || 'nenhuma observação adicional informada.'}
 export const buildPraiseAppKidsCheckinDailySummaryPrompt = (
   input: GeneratePraiseAppKidsCheckinDailySummaryDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const date = String(input.date || '').trim();
   const additionalContext = String(input.additionalContext || '').trim();
 
@@ -158,7 +171,8 @@ ${keyedListBlock('Turmas do dia', input.classSummaries, (item) => {
   const className = String(item.className || '').trim() || 'Turma sem nome';
   const presentCount = Number(item.presentCount || 0);
   const assignedVolunteers = Number(item.assignedVolunteers || 0);
-  const ratio = item.ratio !== null && item.ratio !== undefined ? Number(item.ratio) : null;
+  const ratio =
+    item.ratio !== null && item.ratio !== undefined ? Number(item.ratio) : null;
   const shortage = Number(item.volunteerShortage || 0);
   const alertLevel = String(item.ratioAlertLevel || 'ok').trim() || 'ok';
   return `${className}: presentes=${presentCount}, voluntários=${assignedVolunteers}, proporção=${ratio ?? 'n/a'}, alerta=${alertLevel}, déficit=${shortage}`;
@@ -178,7 +192,9 @@ ${additionalContext || 'nenhuma observação adicional.'}
 export const buildPraiseAppKidsNextSequencePrompt = (
   input: GeneratePraiseAppKidsNextSequenceDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const ageRange = String(input.ageRangeLabel || '5-7 anos').trim();
   const additionalContext = String(input.additionalContext || '').trim();
 
@@ -199,7 +215,8 @@ Aula base ou atual:
 Histórico recente do ministério:
 ${keyedListBlock('Aulas recentes', input.recentLessons, (item) => {
   const title = String(item.title || '').trim() || 'sem título';
-  const reference = String(item.biblicalReference || '').trim() || 'sem referência';
+  const reference =
+    String(item.biblicalReference || '').trim() || 'sem referência';
   const objective = String(item.mainObjective || '').trim() || 'sem objetivo';
   return `${title} (${reference}) - objetivo: ${objective}`;
 })}
@@ -223,7 +240,9 @@ ${additionalContext || 'nenhuma observação adicional.'}
 export const buildPraiseAppKidsWeeklyVerseExpansionPrompt = (
   input: GeneratePraiseAppKidsWeeklyVerseExpansionDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const ageRange = String(input.ageRangeLabel || '3-11 anos').trim();
 
   return `
@@ -253,7 +272,9 @@ Regras de geração:
 export const buildPraiseAppKidsOperationalAssistantPrompt = (
   input: GeneratePraiseAppKidsOperationalAssistantDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const operationalContext = String(input.operationalContext || '').trim();
 
   return `
@@ -283,7 +304,9 @@ Regras de geração:
 export const buildPraiseAppKidsAgeAdaptationsPrompt = (
   input: GeneratePraiseAppKidsAgeAdaptationsDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const targetAgeRanges = (input.targetAgeRanges || [])
     .map((item) => String(item || '').trim())
     .filter(Boolean);
@@ -313,7 +336,9 @@ Regras de geração:
 export const buildPraiseAppKidsPostClassCommunicationPrompt = (
   input: GeneratePraiseAppKidsPostClassCommunicationDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const additionalContext = String(input.additionalContext || '').trim();
 
   return `
@@ -348,7 +373,9 @@ ${additionalContext || 'nenhuma observação adicional.'}
 export const buildPraiseAppKidsEventSuggestionPrompt = (
   input: GeneratePraiseAppKidsEventSuggestionDto,
 ) => {
-  const locale = String(input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR').trim();
+  const locale = String(
+    input.locale || process.env.SELAH_DEFAULT_LOCALE || 'pt-BR',
+  ).trim();
   const purpose = String(input.purpose || '').trim();
   const locationContext = String(input.locationContext || '').trim();
   const additionalContext = String(input.additionalContext || '').trim();
