@@ -1,5 +1,8 @@
 import { BadGatewayException, Logger } from '@nestjs/common';
-import { ProviderQuotaExceededException } from '../provider-errors';
+import {
+  ProviderQuotaExceededException,
+  ProviderUpstreamException,
+} from '../provider-errors';
 import { GeminiProvider } from './gemini.provider';
 
 const okResponse = (text = 'ok') => ({
@@ -315,5 +318,210 @@ describe('GeminiProvider error redaction', () => {
 
     expect((error as Error).message).toContain('blockReason=SAFETY');
     expect((error as Error).message).not.toContain(MARKER);
+  });
+});
+
+const structuredResponse = (text: string, finishReason = 'STOP') => ({
+  data: {
+    candidates: [{ finishReason, content: { parts: [{ text }] } }],
+    usageMetadata: { totalTokenCount: 10 },
+  },
+});
+
+describe('GeminiProvider structured retry on invalid output', () => {
+  const originalEnv = { ...process.env };
+
+  const createProvider = (post: jest.Mock, retries?: string) => {
+    process.env.GEMINI_API_KEY = 'test-key';
+    process.env.GEMINI_RETRY_BASE_MS = '1';
+    process.env.GEMINI_RETRY_MAX_DELAY_MS = '5';
+    if (retries === undefined) delete process.env.GEMINI_INVALID_JSON_RETRIES;
+    else process.env.GEMINI_INVALID_JSON_RETRIES = retries;
+    const provider = new GeminiProvider({
+      getRequestId: () => 'test-request',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post };
+    return provider;
+  };
+
+  const run = (provider: GeminiProvider, validate = (v: unknown) => v) =>
+    provider.generateStructured({
+      userPrompt: 'x',
+      responseSchema: {},
+      validate,
+    });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    jest.restoreAllMocks();
+  });
+
+  it('repete uma vez quando o JSON vem quebrado e devolve a segunda resposta', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValueOnce(structuredResponse('isso nao e json'))
+      .mockResolvedValueOnce(structuredResponse('{"ok":true}'));
+
+    const result = await run(createProvider(post));
+
+    expect(result.data).toEqual({ ok: true });
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it('repete quando o validate do adapter recusa a saida (502 de schema)', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValueOnce(structuredResponse('{"campo":"errado"}'))
+      .mockResolvedValueOnce(structuredResponse('{"campo":"certo"}'));
+    const validate = jest.fn((value: any) => {
+      if (value.campo !== 'certo') throw new BadGatewayException('schema');
+      return value;
+    });
+
+    const result = await run(createProvider(post), validate);
+
+    expect(result.data).toEqual({ campo: 'certo' });
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it('desiste depois da tentativa extra e devolve o 502', async () => {
+    const post = jest.fn().mockResolvedValue(structuredResponse('lixo'));
+
+    await expect(run(createProvider(post))).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+  it('GEMINI_INVALID_JSON_RETRIES=0 desliga a nova tentativa', async () => {
+    const post = jest.fn().mockResolvedValue(structuredResponse('lixo'));
+
+    await expect(run(createProvider(post, '0'))).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('nao repete quando a saida foi cortada por MAX_TOKENS (cortaria de novo)', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValue(structuredResponse('{"a":', 'MAX_TOKENS'));
+
+    await expect(run(createProvider(post))).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('nao repete resposta vazia ou bloqueada', async () => {
+    const post = jest.fn().mockResolvedValue({
+      data: { candidates: [{ finishReason: 'SAFETY' }] },
+    });
+
+    await expect(run(createProvider(post))).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('nao repete erro que nao e 502 (bug no validate nao e culpa do modelo)', async () => {
+    const post = jest.fn().mockResolvedValue(structuredResponse('{"a":1}'));
+    const validate = () => {
+      throw new TypeError('bug');
+    };
+
+    await expect(run(createProvider(post), validate)).rejects.toBeInstanceOf(
+      TypeError,
+    );
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('o log da nova tentativa nao carrega a saida do modelo nem a mensagem do erro', async () => {
+    const SECRET = 'SEGREDO_PII_4b2e';
+    const logged: string[] = [];
+    for (const level of ['log', 'warn', 'error'] as const) {
+      jest.spyOn(Logger.prototype, level).mockImplementation((m: any) => {
+        logged.push(String(m));
+      });
+    }
+    const post = jest
+      .fn()
+      .mockResolvedValueOnce(structuredResponse(`${SECRET} nao e json`))
+      .mockResolvedValueOnce(structuredResponse('{"ok":true}'));
+
+    await run(createProvider(post));
+
+    expect(logged.some((line) => line.includes('retrying'))).toBe(true);
+    expect(logged.filter((line) => line.includes(SECRET))).toEqual([]);
+  });
+
+  it('chamadas estruturadas por contents tambem repetem', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValueOnce(structuredResponse('lixo'))
+      .mockResolvedValueOnce(structuredResponse('{"ok":1}'));
+
+    const result = await createProvider(post).generateStructuredFromContents({
+      contents: [{ parts: [{ text: 'oi' }] }],
+      responseSchema: {},
+      validate: (v) => v,
+    });
+
+    expect(result.data).toEqual({ ok: 1 });
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('GeminiProvider transient flag (circuit breaker)', () => {
+  const originalEnv = { ...process.env };
+
+  const failWith = async (error: unknown) => {
+    process.env.GEMINI_API_KEY = 'test-key';
+    process.env.GEMINI_RETRY_BASE_MS = '1';
+    process.env.GEMINI_RETRY_MAX_DELAY_MS = '5';
+    const provider = new GeminiProvider({
+      getRequestId: () => 'r',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockRejectedValue(error) };
+    return provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e) => e);
+  };
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it.each([[500], [502], [503], [504]])(
+    '%i esgotado conta como transitorio',
+    async (status) => {
+      const error = await failWith(httpError(status));
+      expect(error).toBeInstanceOf(ProviderUpstreamException);
+      expect(error.transient).toBe(true);
+      expect(error.getStatus()).toBe(502);
+    },
+  );
+
+  it('erro de rede sem resposta HTTP conta como transitorio', async () => {
+    const error = await failWith({ code: 'ECONNRESET', message: 'reset' });
+    expect(error).toBeInstanceOf(ProviderUpstreamException);
+    expect(error.transient).toBe(true);
+  });
+
+  it.each([[400], [401], [403], [404]])(
+    '%i nao conta: o provedor esta no ar',
+    async (status) => {
+      const error = await failWith(httpError(status));
+      expect(error).toBeInstanceOf(ProviderUpstreamException);
+      expect(error.transient).toBe(false);
+    },
+  );
+
+  it('429 vira ProviderQuotaExceededException, nao ProviderUpstreamException', async () => {
+    const error = await failWith(httpError(429));
+    expect(error).toBeInstanceOf(ProviderQuotaExceededException);
+    expect(error).not.toBeInstanceOf(ProviderUpstreamException);
   });
 });

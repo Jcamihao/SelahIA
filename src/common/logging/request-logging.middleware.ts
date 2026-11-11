@@ -1,13 +1,17 @@
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Request, Response, NextFunction } from 'express';
+import { MetricsService } from '../metrics/metrics.service';
 import { RequestContextService } from './request-context.service';
 
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
   private readonly logger = new Logger('SelahHttp');
 
-  constructor(private readonly requestContext: RequestContextService) {}
+  constructor(
+    private readonly requestContext: RequestContextService,
+    @Optional() private readonly metrics?: MetricsService,
+  ) {}
 
   use(request: Request, response: Response, next: NextFunction) {
     const requestId =
@@ -48,6 +52,17 @@ export class RequestLoggingMiddleware implements NestMiddleware {
 
         const durationMs = Date.now() - startedAt;
         const status = Number(response.statusCode || 0);
+        // Rota pelo padrao registrado (ex.: /v1/adapters/.../gerar), nunca pelo path cru: path cru
+        // deixaria um chamador criar series infinitas.
+        const matched = (request as { route?: { path?: unknown } }).route?.path;
+        this.metrics?.recordHttp({
+          app: context.sourceApp,
+          method,
+          route: typeof matched === 'string' ? matched : 'unmatched',
+          status,
+          durationMs,
+        });
+
         const baseMessage = `[${requestId}] <-- ${method} ${path} status=${status} durationMs=${durationMs} source=${context.sourceApp} event=${event}`;
 
         if (status >= 500) {
@@ -72,7 +87,14 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     });
   }
 
+  // `request.ip` respeita o `trust proxy` do app: com o nginx confiavel ele e o IP real do cliente.
+  // O primeiro valor de X-Forwarded-For e o que o proprio cliente mandou e pode ser forjado, entao
+  // so serve de ultimo recurso (conexao que nao veio por proxy confiavel, sem `request.ip`).
   private resolveIp(request: Request) {
+    if (request.ip) {
+      return request.ip;
+    }
+
     const forwardedFor = request.headers['x-forwarded-for'];
     if (Array.isArray(forwardedFor) && forwardedFor.length) {
       return String(forwardedFor[0]).trim();
@@ -83,7 +105,6 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     }
 
     return (
-      request.ip ||
       request.socket?.remoteAddress ||
       request.connection?.remoteAddress ||
       'unknown'

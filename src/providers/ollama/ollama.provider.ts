@@ -1,4 +1,5 @@
 import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import { ProviderUpstreamException } from '../provider-errors';
 import axios, { AxiosInstance } from 'axios';
 import {
   GenerateTextResult,
@@ -255,8 +256,10 @@ export class OllamaProvider implements LlmProvider {
       this.logger.error(
         `[${requestId}] Ollama request failed mode=${meta.mode} model=${model} status=${status || 'n/a'} durationMs=${durationMs} reason=${code}`,
       );
-      throw new BadGatewayException(
+      // Sem resposta HTTP (Ollama fora do ar) ou 5xx e transitorio; 4xx nao.
+      throw new ProviderUpstreamException(
         `Ollama request failed status=${status || 'n/a'} reason=${code}`,
+        !status || status >= 500,
       );
     }
   }

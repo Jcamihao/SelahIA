@@ -1,4 +1,5 @@
 import { BadGatewayException, Logger } from '@nestjs/common';
+import { ProviderUpstreamException } from '../provider-errors';
 import { OllamaProvider } from './ollama.provider';
 
 // Erro do upstream nao pode vazar texto livre (pode repetir conteudo da requisicao) para log nem 502.
@@ -125,5 +126,38 @@ describe('OllamaProvider error redaction', () => {
         true,
       );
     }
+  });
+});
+
+describe('OllamaProvider transient flag (circuit breaker)', () => {
+  const failWith = (error: unknown) => {
+    const provider = new OllamaProvider({
+      getRequestId: () => 'r',
+      getSourceApp: () => 'test',
+    } as any);
+    (provider as any).httpClient = { post: jest.fn().mockRejectedValue(error) };
+    jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    return provider
+      .generateTextFromContents({ contents: [{ parts: [{ text: 'oi' }] }] })
+      .catch((e) => e);
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('Ollama fora do ar (sem resposta HTTP) conta como transitorio', async () => {
+    const error = await failWith({ code: 'ECONNREFUSED', message: 'x' });
+    expect(error).toBeInstanceOf(ProviderUpstreamException);
+    expect(error.transient).toBe(true);
+    expect(error.getStatus()).toBe(502);
+  });
+
+  it('5xx conta como transitorio e 4xx nao', async () => {
+    expect((await failWith({ response: { status: 503 } })).transient).toBe(
+      true,
+    );
+    expect((await failWith({ response: { status: 404 } })).transient).toBe(
+      false,
+    );
   });
 });

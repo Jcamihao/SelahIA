@@ -10,11 +10,13 @@ import { HealthModule } from './health/health.module';
 import { ProvidersModule } from './providers/providers.module';
 import { AuthModule } from './common/auth/auth.module';
 import { LoggingModule } from './common/logging/logging.module';
+import { MetricsModule } from './common/metrics/metrics.module';
 import { RequestLoggingMiddleware } from './common/logging/request-logging.middleware';
 
 @Module({
   imports: [
     LoggingModule,
+    MetricsModule,
     AuthModule,
     HealthModule,
     ProvidersModule,

@@ -5,7 +5,7 @@
 <h1 align="center">🕊️ Selah IA</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.8.0-22c55e" alt="Version" />
+  <img src="https://img.shields.io/badge/version-2.9.0-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
   <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
@@ -122,7 +122,13 @@ O CI (`.github/workflows/ci.yml`) roda build, testes unitários e e2e em todo pu
 
 - **Validação no boot:** o Selah recusa subir com configuração inválida (variável numérica malformada, URL inválida, `LLM_PROVIDER` desconhecido). Em produção também exige `GEMINI_API_KEY` (provider gemini) e uma chave de API interna.
 - **Shutdown gracioso:** `SIGTERM` espera as requisições em andamento terminarem; o compose de produção dá 50 s (`stop_grace_period`).
-- **Erros do consumidor:** `429` = estourou o rate limit do app no Selah; `503` com `Retry-After` e `reason: PROVIDER_QUOTA_EXCEEDED` = a cota do Gemini acabou; `502` = o provider falhou ou devolveu resposta inválida.
+- **Erros do consumidor** (corpo com `reason` e `retryAfterSeconds`, e header `Retry-After`):
+  - `429` é limite do **Selah**: rate limit por minuto ou `DAILY_TOKEN_BUDGET_EXCEEDED` (teto diário de tokens do app).
+  - `503` é o **provedor de LLM**: `PROVIDER_QUOTA_EXCEEDED` (cota do Gemini), `PROVIDER_BUSY` (fila de chamadas cheia) ou `PROVIDER_UNAVAILABLE` (circuit breaker aberto após falhas seguidas).
+  - `502` é falha do provedor ou saída inválida do modelo (o Selah já tenta de novo uma vez antes de devolver).
+- **Proteção contra provedor lento:** limite de chamadas simultâneas ao LLM com fila curta e circuit breaker (`LLM_MAX_CONCURRENCY`, `LLM_MAX_QUEUE`, `LLM_CIRCUIT_*`), mais teto diário de tokens por app (`SELAH_DAILY_TOKEN_BUDGET`, `SELAH_TOKEN_BUDGETS`). Valores e padrões em `.env.example`.
+- **Métricas:** `GET /metrics` (formato Prometheus, exige `X-Selah-Api-Key`; o nginx de produção não expõe a rota na internet).
+- **Autenticação antes do corpo:** requisição sem chave válida recebe 401 sem o Selah ler o corpo (até 20 MB).
 - **Para quem for trabalhar no código (pessoa ou IA):** leia `HANDOFF.md`.
 
 ## 🔐 Segurança interna
@@ -175,6 +181,7 @@ src/
 ## 📌 Documentação complementar
 
 - 🧭 Handoff para IAs e novos devs: `HANDOFF.md`
+- 📝 Release notes 2.9.0: `docs/releases/v2.9.0.md`
 - 📝 Release notes 2.8.0: `docs/releases/v2.8.0.md`
 - 📝 Release notes 2.7.9: `docs/releases/v2.7.9.md`
 - 📝 Release notes 2.7.2: `docs/releases/v2.7.2.md`

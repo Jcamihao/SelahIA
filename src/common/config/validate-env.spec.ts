@@ -1,4 +1,8 @@
-import { assertValidEnvironment, validateEnvironment } from './validate-env';
+import {
+  assertValidEnvironment,
+  readEnvInt,
+  validateEnvironment,
+} from './validate-env';
 
 const prod = {
   NODE_ENV: 'production',
@@ -60,6 +64,51 @@ describe('validateEnvironment', () => {
   ])('rejeita %s=%s', (name, value) => {
     const { errors } = validateEnvironment({ ...prod, [name]: value });
     expect(errors).toEqual([expect.stringContaining(name)]);
+  });
+
+  it.each([
+    ['GEMINI_INVALID_JSON_RETRIES', '3'],
+    ['LLM_MAX_CONCURRENCY', '-1'],
+    ['LLM_MAX_QUEUE', 'muitas'],
+    ['LLM_QUEUE_TIMEOUT_MS', '0'],
+    ['LLM_CIRCUIT_FAILURE_THRESHOLD', '1.5'],
+    ['LLM_CIRCUIT_OPEN_MS', '0'],
+    ['SELAH_DAILY_TOKEN_BUDGET', '-10'],
+    ['SELAH_DAILY_TOKEN_BUDGET', 'infinito'],
+    ['SELAH_TOKEN_BUDGETS', 'LumenBack'],
+    ['SELAH_TOKEN_BUDGETS', 'LumenBack:abc'],
+    ['SELAH_TRUST_PROXY', 'true'],
+    ['SELAH_TRUST_PROXY', 'qualquer coisa'],
+  ])('rejeita a variavel de resiliencia %s=%s', (name, value) => {
+    const { errors } = validateEnvironment({ ...prod, [name]: value });
+    expect(errors).toEqual([expect.stringContaining(name)]);
+  });
+
+  it('aceita a configuracao de resiliencia valida (inclusive 0 para desligar)', () => {
+    const { errors } = validateEnvironment({
+      ...prod,
+      GEMINI_INVALID_JSON_RETRIES: '0',
+      LLM_MAX_CONCURRENCY: '0',
+      LLM_MAX_QUEUE: '0',
+      LLM_CIRCUIT_FAILURE_THRESHOLD: '0',
+      SELAH_DAILY_TOKEN_BUDGET: '1000000',
+      SELAH_TOKEN_BUDGETS: 'LumenBack:500000,AgilisBack:0',
+      SELAH_TRUST_PROXY: 'loopback,10.0.0.0/8',
+    });
+    expect(errors).toEqual([]);
+  });
+
+  it('readEnvInt usa o padrao quando vazio e lanca com o nome da variavel quando invalido', () => {
+    expect(readEnvInt('LLM_MAX_CONCURRENCY', 10, {})).toBe(10);
+    expect(
+      readEnvInt('LLM_MAX_CONCURRENCY', 10, { LLM_MAX_CONCURRENCY: ' ' }),
+    ).toBe(10);
+    expect(
+      readEnvInt('LLM_MAX_CONCURRENCY', 10, { LLM_MAX_CONCURRENCY: '3' }),
+    ).toBe(3);
+    expect(() =>
+      readEnvInt('LLM_MAX_CONCURRENCY', 10, { LLM_MAX_CONCURRENCY: '99999' }),
+    ).toThrow('LLM_MAX_CONCURRENCY');
   });
 
   it.each(['GEMINI_API_BASE_URL', 'OLLAMA_BASE_URL'])(

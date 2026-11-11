@@ -528,4 +528,26 @@ describe('logs do Selah nao carregam dados pessoais nem conteudo livre', () => {
     expect(logged.some((line) => line.includes('GET /health'))).toBe(true);
     expectNoSecretInLogs();
   });
+  it('log HTTP: usa request.ip (confiavel) e nao o X-Forwarded-For forjado pelo cliente', () => {
+    const middleware = new RequestLoggingMiddleware(
+      new RequestContextService(),
+    );
+    const response: any = new EventEmitter();
+    response.setHeader = jest.fn();
+    response.statusCode = 200;
+
+    middleware.use(
+      {
+        headers: { 'x-forwarded-for': '6.6.6.6' },
+        method: 'GET',
+        originalUrl: '/health',
+        ip: '203.0.113.9',
+      } as any,
+      response,
+      jest.fn(),
+    );
+
+    expect(logged.some((line) => line.includes('ip=203.0.113.9'))).toBe(true);
+    expect(logged.some((line) => line.includes('6.6.6.6'))).toBe(false);
+  });
 });

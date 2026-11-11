@@ -13,8 +13,12 @@ import {
   StructuredGenerationInput,
   StructuredGenerationResult,
 } from '../llm-provider.interface';
+import { readEnvInt } from '../../common/config/validate-env';
 import { RequestContextService } from '../../common/logging/request-context.service';
-import { ProviderQuotaExceededException } from '../provider-errors';
+import {
+  ProviderQuotaExceededException,
+  ProviderUpstreamException,
+} from '../provider-errors';
 import { isUpperEnum, pickUpperEnum } from '../safe-token';
 
 type GeminiCandidate = {
@@ -68,6 +72,11 @@ export class GeminiProvider implements LlmProvider {
     1,
     Number(process.env.GEMINI_RETRY_MAX_DELAY_MS ?? 8000) || 8000,
   );
+  // Tentativas extras quando o JSON vem invalido ou fora do schema (cada uma e uma chamada nova).
+  private readonly invalidJsonRetries = readEnvInt(
+    'GEMINI_INVALID_JSON_RETRIES',
+    1,
+  );
   private readonly structuredThinkingBudget = Number(
     process.env.GEMINI_STRUCTURED_THINKING_BUDGET ?? 0,
   );
@@ -88,7 +97,7 @@ export class GeminiProvider implements LlmProvider {
       input.thinkingBudget !== undefined
         ? input.thinkingBudget
         : this.structuredThinkingBudget;
-    const response = await this.request(
+    return this.requestStructured(
       model,
       {
         system_instruction: this.toSystemInstruction(input.systemInstruction),
@@ -112,16 +121,8 @@ export class GeminiProvider implements LlmProvider {
         thinkingBudget,
         maxOutputTokens: input.maxOutputTokens,
       },
+      input.validate,
     );
-
-    const text = this.extractText(response);
-    const parsed = this.parseJson(text, response);
-    return {
-      data: input.validate(parsed),
-      text,
-      model,
-      raw: response,
-    };
   }
 
   async generateTextFromContents(input: {
@@ -176,7 +177,7 @@ export class GeminiProvider implements LlmProvider {
       input.thinkingBudget !== undefined
         ? input.thinkingBudget
         : this.structuredThinkingBudget;
-    const response = await this.request(
+    return this.requestStructured(
       model,
       {
         system_instruction: this.toSystemInstruction(input.systemInstruction),
@@ -199,16 +200,46 @@ export class GeminiProvider implements LlmProvider {
         thinkingBudget,
         maxOutputTokens: input.maxOutputTokens,
       },
+      input.validate,
     );
+  }
 
-    const text = this.extractText(response);
-    const parsed = this.parseJson(text, response);
-    return {
-      data: input.validate(parsed),
-      text,
-      model,
-      raw: response,
-    };
+  // Chamada estruturada: o Gemini as vezes devolve JSON quebrado ou fora do schema (o `validate` do
+  // adapter lanca 502). Repete ate `invalidJsonRetries` vezes. Nao repete se a saida foi cortada por
+  // MAX_TOKENS (mesmo teto, mesmo corte) nem se veio vazia/bloqueada (extractText lanca antes).
+  // Pior caso: (1 + retries) chamadas completas, cada uma com o orcamento de GEMINI_TIMEOUT_MS.
+  private async requestStructured<T>(
+    model: string,
+    payload: Record<string, unknown>,
+    meta: Parameters<GeminiProvider['request']>[2],
+    validate: (payload: unknown) => T,
+  ): Promise<StructuredGenerationResult<T>> {
+    const requestId = this.requestContext.getRequestId();
+
+    for (let attempt = 0; ; attempt++) {
+      const response = await this.request(model, payload, meta);
+      const text = this.extractText(response);
+
+      try {
+        const parsed = this.parseJson(text, response);
+        return { data: validate(parsed), text, model, raw: response };
+      } catch (error) {
+        const truncated =
+          pickUpperEnum(response?.candidates?.[0]?.finishReason) ===
+          'MAX_TOKENS';
+        if (
+          !(error instanceof BadGatewayException) ||
+          truncated ||
+          attempt >= this.invalidJsonRetries
+        ) {
+          throw error;
+        }
+        // Sem a mensagem do erro e sem o texto da saida: podem carregar conteudo do usuario.
+        this.logger.warn(
+          `[${requestId}] Gemini structured output invalid, retrying model=${model} attempt=${attempt + 1}/${this.invalidJsonRetries + 1}`,
+        );
+      }
+    }
   }
 
   private resolveModel(model?: string) {
@@ -326,11 +357,20 @@ export class GeminiProvider implements LlmProvider {
             Number(error?.response?.headers?.['retry-after']),
           );
         }
-        throw new BadGatewayException(
+        // Transitorio (rede, timeout, 5xx) conta para o circuit breaker; 4xx nao.
+        throw new ProviderUpstreamException(
           `Gemini request failed status=${status || 'n/a'} reason=${reason}`,
+          this.isTransient(error),
         );
       }
     }
+  }
+
+  private isTransient(error: any): boolean {
+    const status = Number(error?.response?.status || 0);
+    return status
+      ? status !== 429 && GEMINI_RETRYABLE_STATUS.has(status)
+      : GEMINI_RETRYABLE_NETWORK_CODES.has(String(error?.code || ''));
   }
 
   // Motivo seguro para log e 502: so enum (status da Google ou codigo de rede), nunca texto livre.
