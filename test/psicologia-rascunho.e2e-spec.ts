@@ -16,7 +16,7 @@ describe('POST /v1/adapters/psicologia/rascunho/gerar (e2e)', () => {
   beforeAll(async () => {
     // Sem chaves configuradas o guard libera tudo fora de producao.
     chavesAnteriores = process.env.SELAH_APP_KEYS;
-    process.env.SELAH_APP_KEYS = `NottaPsiBack:${CHAVE}`;
+    process.env.SELAH_APP_KEYS = `PsicologiaBack:${CHAVE}`;
     const moduleFixture = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(LLM_PROVIDER_TOKEN)
       .useValue({ generateStructured })
@@ -56,7 +56,7 @@ describe('POST /v1/adapters/psicologia/rascunho/gerar (e2e)', () => {
     expect(generateStructured).not.toHaveBeenCalled();
   });
 
-  it('aceita a chave NottaPsiBack e devolve o rascunho com os metadados do provider', async () => {
+  it('aceita a chave PsicologiaBack e devolve o rascunho com os metadados do provider', async () => {
     const response = await request(app.getHttpServer())
       .post('/v1/adapters/psicologia/rascunho/gerar')
       .set('x-selah-api-key', CHAVE)
