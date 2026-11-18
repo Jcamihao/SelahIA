@@ -50,7 +50,6 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 
 - NestJS 11 (Express 5), Node >= 20.11
 - Gemini (provider hospedado)
-- Axios
 - Class Validator / Class Transformer
 - Jest
 

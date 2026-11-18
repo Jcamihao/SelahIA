@@ -4,7 +4,6 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
 import {
   GenerateTextInput,
   GenerateTextResult,
@@ -20,6 +19,7 @@ import {
   ProviderUpstreamException,
 } from '../provider-errors';
 import { isUpperEnum, pickUpperEnum } from '../safe-token';
+import { postJson } from './post-json';
 
 type GeminiCandidate = {
   content?: {
@@ -80,12 +80,8 @@ export class GeminiProvider implements LlmProvider {
   private readonly structuredThinkingBudget = Number(
     process.env.GEMINI_STRUCTURED_THINKING_BUDGET ?? 0,
   );
-  private readonly httpClient: AxiosInstance = axios.create({
-    timeout: this.timeoutMs,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  // Campo (e nao import direto) para os testes trocarem o transporte.
+  private readonly httpClient = { post: postJson };
 
   constructor(private readonly requestContext: RequestContextService) {}
 

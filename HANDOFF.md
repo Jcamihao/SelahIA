@@ -2,7 +2,7 @@
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
 > Última atualização: 2026-11-18, v2.9.1.
-> **Branch de trabalho:** nenhuma aberta. Branches fixas: `master` (produção, deploy) e `develop` (testes gerais). Tarefa nova sai de `develop` como `feat/<nome>` ou `fix/<nome>`; ao terminar, merge em `develop`. Merge na `master` só quando o dono pedir. Último item: `fix/ponytail-ollama-watch` (Ollama e `watch-consumers.mjs` removidos) mergeado em `develop`; 321 unitários e 17 e2e passando. A `master` ainda não tem esse merge.
+> **Branch de trabalho:** nenhuma aberta. Branches fixas: `master` (produção, deploy) e `develop` (testes gerais). Tarefa nova sai de `develop` como `feat/<nome>` ou `fix/<nome>`; ao terminar, merge em `develop`. Merge na `master` só quando o dono pedir. Último item: `fix/ponytail-axios-fetch` (axios trocado pelo `fetch` nativo em `src/providers/gemini/post-json.ts`; asset morto `selah-coder` tirado do `nest-cli.json`) mergeado em `develop`; 328 unitários e 17 e2e passando. Antes dele: Ollama e `watch-consumers.mjs` removidos. A `master` ainda não tem esse merge.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
@@ -14,7 +14,7 @@ Idioma: README, commits, comentários e mensagens de erro em **português** (sem
 ```bash
 npm ci                                     # Node >= 20.11 (Nest 11 exige >= 20)
 npm run build                              # nest build
-npx jest                                   # 339 unitarios (rootDir=src, *.spec.ts)
+npx jest                                   # 328 unitarios (rootDir=src, *.spec.ts)
 npm run test:e2e                           # 17 e2e (test/*.e2e-spec.ts, AppModule real; so o provider e falso)
 npm run start:dev                          # watch
 curl localhost:3010/health
@@ -71,7 +71,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 - Deploy continua exigindo pedido explícito do dono.
 
 ## 5. Estado atual (v2.9.1)
-- Build ok, lint limpo (eslint + prettier), **339 unitários e 17 e2e passando** (verificado nesta sessão). O lint é gate do CI; rode `npx eslint "{src,test}/**/*.ts"` antes de commitar e `npx prettier --write` nos arquivos que tocar.
+- Build ok, lint limpo (eslint + prettier), **328 unitários e 17 e2e passando** (verificado nesta sessão). O lint é gate do CI; rode `npx eslint "{src,test}/**/*.ts"` antes de commitar e `npx prettier --write` nos arquivos que tocar.
 - **2.8.0:** CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, cota do Gemini como 503 + `Retry-After`, formatação de todo o código. **2.9.0:** limite de concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy`. **2.9.1:** NestJS 10 → 11 (Express 5) e `npm audit fix`: `npm audit --omit=dev` de 10 vulnerabilidades (1 crítica) para **0**. Detalhes e impacto em `docs/releases/v2.8.0.md`, `v2.9.0.md` e `v2.9.1.md`.
 - **Verificado com o processo real** (`node dist/main` + Gemini falso programável): shutdown com requisição em andamento (v2.8.0); circuito, fila cheia, nova tentativa, cota e métricas (v2.9.0); Express 5, rotas e shutdown de novo no Nest 11 (v2.9.1).
 - Produção: Docker Compose (`docker-compose.prod.yml`) em `127.0.0.1:3020` atrás do nginx (`deploy/nginx/selah.conf`, `selah.financelumen.tech`). O `Dockerfile` já tem `HEALTHCHECK` e roda como usuário `node`.
