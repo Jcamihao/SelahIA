@@ -62,6 +62,14 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 7. **Só falha transitória do provedor abre o circuit breaker** (`ProviderUpstreamException.transient`): resposta inválida, 4xx e cota **não** abrem. Se criar um provider novo, marque `transient` direito.
 8. Mudou comportamento visível para consumidores? Bump de versão em `package.json`, nota em `docs/releases/vX.Y.Z.md` e linha no README.
 
+### Regras de git (pedido do dono, valem para toda sessão)
+- **`master`** é produção: dali o dono faz o deploy. **`develop`** é o ambiente de testes gerais e é tratada igual à `master`: ninguém commita feature ou correção direto nela, só entra merge de branch de trabalho.
+- **Tarefa nova abre branch nova**, sempre, a partir de `develop` atualizada: `feat/<nome>` para funcionalidade e `fix/<nome>` para bug. Não existe branch permanente de bugfix.
+- **Terminou** (testes, lint e build verdes): merge `--no-ff` em `develop`, testes de novo, push da `develop` e a branch de trabalho é apagada (local e remota). Não precisa de aprovação.
+- **Merge de `develop` em `master` só quando o dono pedir explicitamente.** Nesse momento: testes na `master`, tag `vX.Y.Z` anotada se o produto mudou, push da `master` e da tag. Nunca fazer isso por conta própria.
+- Nunca `git push --force`. Commits com caminhos explícitos, sem `git add -A`, sem amend nem reset de commit já feito.
+- Deploy continua exigindo pedido explícito do dono.
+
 ## 5. Estado atual (v2.9.1)
 - Build ok, lint limpo (eslint + prettier), **339 unitários e 17 e2e passando** (verificado nesta sessão). O lint é gate do CI; rode `npx eslint "{src,test}/**/*.ts"` antes de commitar e `npx prettier --write` nos arquivos que tocar.
 - **2.8.0:** CI, shutdown gracioso (+ `stop_grace_period: 50s`), validação de env no boot, cota do Gemini como 503 + `Retry-After`, formatação de todo o código. **2.9.0:** limite de concorrência com fila, circuit breaker, nova tentativa em JSON inválido, `/metrics`, teto diário de tokens por app, 401 antes de ler o corpo, `trust proxy`. **2.9.1:** NestJS 10 → 11 (Express 5) e `npm audit fix`: `npm audit --omit=dev` de 10 vulnerabilidades (1 crítica) para **0**. Detalhes e impacto em `docs/releases/v2.8.0.md`, `v2.9.0.md` e `v2.9.1.md`.
