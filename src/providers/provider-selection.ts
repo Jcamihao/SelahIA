@@ -1,12 +1,2 @@
-export type ActiveLlmProvider = 'ollama' | 'gemini';
-
-// Gemini e o provider padrao; Ollama so entra com LLM_PROVIDER=ollama explicito.
-export const resolveActiveLlmProvider = (): ActiveLlmProvider => {
-  const explicit = String(process.env.LLM_PROVIDER || '')
-    .trim()
-    .toLowerCase();
-  return explicit === 'ollama' ? 'ollama' : 'gemini';
-};
-
-export const resolveActiveProviderLabel = () =>
-  resolveActiveLlmProvider() === 'gemini' ? 'gemini-developer-api' : 'ollama';
+// Gemini e o unico provider. O rotulo vai nas respostas dos adapters e no /health.
+export const resolveActiveProviderLabel = () => 'gemini-developer-api';

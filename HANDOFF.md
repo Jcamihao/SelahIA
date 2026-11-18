@@ -2,11 +2,11 @@
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
 > Última atualização: 2026-11-18, v2.9.1.
-> **Branch de trabalho:** `master`, sem feature em andamento. A `fix/ponytail-seguros` foi mergeada (aprovada pelo dono) e continua no remoto.
+> **Branch de trabalho:** `fix/ponytail-ollama-watch` (tipo fix, base `master`, no remoto). Remove o provider Ollama e `scripts/watch-consumers.mjs` (ninguém usa, confirmado pelo dono). Merge na `master` aguardando aprovação do dono.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
-API interna em **NestJS 10** da codeStage. Fica entre os backends de SaaS internos e um LLM (**Gemini** por padrão, **Ollama** opcional). Cada SaaS tem um **adapter** com rotas, prompt, schema JSON e validador. Stateless: sem banco; o backend do SaaS monta o contexto e decide o que persiste. O frontend nunca fala com o Selah.
+API interna em **NestJS 10** da codeStage. Fica entre os backends de SaaS internos e um LLM (**Gemini**). Cada SaaS tem um **adapter** com rotas, prompt, schema JSON e validador. Stateless: sem banco; o backend do SaaS monta o contexto e decide o que persiste. O frontend nunca fala com o Selah.
 
 Idioma: README, commits, comentários e mensagens de erro em **português** (sem acentos nos comentários e logs do código). Responda ao usuário em português.
 
@@ -36,7 +36,7 @@ src/
     psicologia/rascunho      # nota ANONIMIZADA -> rascunho de evolucao/anamnese (dado clinico!)
   providers/
     llm-provider.interface.ts# contrato: generateStructured, generateStructuredFromContents, generateTextFromContents
-    gemini/ ollama/          # implementacoes; provider-selection.ts escolhe por LLM_PROVIDER
+    gemini/                  # unico provider; provider-selection.ts so expoe o rotulo
     provider-errors.ts       # excecoes: Quota(503), Upstream(502, transient), Busy(503), Unavailable(503), TokenBudget(429)
     resilience/              # ResilientLlmProvider envolve o provider ativo: teto de tokens, circuit breaker, concorrencia, metricas
     safe-token.ts            # so enums seguros vao para log/502
@@ -77,7 +77,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 | **Estado em memória, por instância** | Rate limit, limite de concorrência, circuit breaker e teto diário de tokens zeram a cada restart e valem por réplica. Redis só se houver mais de uma réplica. |
 | **Psicologia** | Decisão pendente: rascunho **fiel** à nota ou **reescrito** (hoje sai do tamanho da nota). Não verificado: anamnese colada sem quebras de linha, autolesão em PSICANALISE, notas perto de 8.000 caracteres. |
 | **Consumidores e os novos códigos** | Não foi verificado como Lumen, PraiseApp, Agilis e BalancoGordura tratam 503 (`PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_BUSY`, `PROVIDER_UNAVAILABLE`) e 429 com corpo (`DAILY_TOKEN_BUDGET_EXCEEDED`). Antes a cota era 502. |
-| **Tokens da tentativa descartada** | Na nova tentativa por JSON inválido só os tokens da última resposta entram na métrica e no teto diário; o gasto real pode ser maior. O Ollama não informa tokens (teto e métrica de tokens só valem para o Gemini). |
+| **Tokens da tentativa descartada** | Na nova tentativa por JSON inválido só os tokens da última resposta entram na métrica e no teto diário; o gasto real pode ser maior. |
 | **`trust proxy` e nginx não testados em produção** | O padrão `loopback,uniquelocal` assume que o nginx chega ao container por IP privado (bridge do Docker). Conferir no servidor que o `ip=` do log é o do cliente. Se aparecer o IP do gateway do Docker, ajustar `SELAH_TRUST_PROXY`. O bloco `location = /metrics` do nginx também não foi executado (`nginx -t` não rodou). |
 | **`/metrics` sem scraper configurado** | A rota existe e exige chave; falta criar a chave `Prometheus:<chave>` em `SELAH_APP_KEYS` e configurar o scrape (e alertas, ex.: `selah_llm_circuit_state == 2`). Nada disso foi feito. |
 | **Padrões de resiliência não calibrados** | 10 simultâneas, fila 20, circuito 5 falhas/30 s, teto de tokens desligado: são palpites razoáveis, não medidos com tráfego real. |

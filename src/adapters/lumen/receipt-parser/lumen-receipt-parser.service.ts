@@ -147,7 +147,7 @@ export class LumenReceiptParserService {
       }
 
       throw new BadGatewayException(
-        'Ollama retornou um JSON invalido para leitura de nota fiscal.',
+        'O provider retornou um JSON invalido para leitura de nota fiscal.',
       );
     }
   }

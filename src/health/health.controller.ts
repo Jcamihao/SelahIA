@@ -1,15 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-  resolveActiveLlmProvider,
-  resolveActiveProviderLabel,
-} from '../providers/provider-selection';
+import { resolveActiveProviderLabel } from '../providers/provider-selection';
 
 const resolveActiveProvider = () => ({
   provider: resolveActiveProviderLabel(),
-  model:
-    resolveActiveLlmProvider() === 'gemini'
-      ? String(process.env.GEMINI_MODEL || 'gemini-2.5-flash')
-      : String(process.env.OLLAMA_MODEL || 'gemma4:e4b'),
+  model: String(process.env.GEMINI_MODEL || 'gemini-2.5-flash'),
 });
 
 @Controller()

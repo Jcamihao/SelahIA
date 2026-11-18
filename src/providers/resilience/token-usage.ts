@@ -5,8 +5,7 @@ const count = (value: unknown) => {
   return Number.isFinite(number) && number > 0 ? number : 0;
 };
 
-// Le os tokens da resposta crua do Gemini (usageMetadata). O Ollama nao devolve contagem em `raw`
-// (so o conteudo), entao ali o resultado e zero e nenhum teto de tokens se aplica.
+// Le os tokens da resposta crua do Gemini (usageMetadata). Sem usageMetadata o resultado e zero.
 export const extractTokenUsage = (raw: unknown): TokenUsage => {
   const usage = (raw as { usageMetadata?: Record<string, unknown> } | null)
     ?.usageMetadata;
