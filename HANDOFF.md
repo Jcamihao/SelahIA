@@ -2,7 +2,7 @@
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
 > Última atualização: 2026-11-18, v2.9.1.
-> **Branch de trabalho:** `fix/remove-notta-psi` (tipo fix, base `master`, ainda não enviada ao remoto). Remove todas as referências ao Notta.psi. Merge na `master` aguardando aprovação do dono.
+> **Branch de trabalho:** `master`, sem feature em andamento. A `fix/remove-notta-psi` foi mergeada (`64445da`, aprovada pelo dono) e continua no remoto.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
