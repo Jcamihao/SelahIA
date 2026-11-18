@@ -2,7 +2,7 @@
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
 > Última atualização: 2026-11-18, v2.9.1.
-> **Branch de trabalho:** `fix/ponytail-ollama-watch` (tipo fix, base `master`, no remoto). Remove o provider Ollama e `scripts/watch-consumers.mjs` (ninguém usa, confirmado pelo dono). Merge na `master` aguardando aprovação do dono.
+> **Branch de trabalho:** nenhuma aberta. Branches fixas: `master` (produção, deploy) e `develop` (testes gerais). Tarefa nova sai de `develop` como `feat/<nome>` ou `fix/<nome>`; ao terminar, merge em `develop`. Merge na `master` só quando o dono pedir. Último item: `fix/ponytail-ollama-watch` (Ollama e `watch-consumers.mjs` removidos) mergeado em `develop`; 321 unitários e 17 e2e passando. A `master` ainda não tem esse merge.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
