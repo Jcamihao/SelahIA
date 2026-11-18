@@ -37,7 +37,9 @@ describe('WorshipAiService', () => {
 
     const result = await service.getSetlistSuggestions({
       theme: 'Graça',
-      repertoire: [{ id: 1, title: 'Grande é o Senhor', author: 'X', key: 'G' }],
+      repertoire: [
+        { id: 1, title: 'Grande é o Senhor', author: 'X', key: 'G' },
+      ],
     });
 
     expect(result).toEqual(setlist);
@@ -82,18 +84,26 @@ describe('WorshipAiService', () => {
     });
 
     expect(prompt).toContain('só pode sugerir músicas que estão na lista');
-    expect(prompt).toContain('- ID: 7 | Título: Grande é o Senhor | Autor: Adhemar | Tom: G');
-    expect(prompt).toContain('- ID: 9 | Título: Ele é Exaltado | Autor: Twila | Tom: D');
+    expect(prompt).toContain(
+      '- ID: 7 | Título: Grande é o Senhor | Autor: Adhemar | Tom: G',
+    );
+    expect(prompt).toContain(
+      '- ID: 9 | Título: Ele é Exaltado | Autor: Twila | Tom: D',
+    );
     expect(prompt).toContain('"Graça"');
     expect(prompt).toContain('"Nenhuma"');
   });
 
   it('builds a rehearsal prompt with leader notes and a default theme', () => {
     const prompt = buildWorshipRehearsalNotesPrompt({
-      songs: [{ title: 'Grande é o Senhor', key: 'G', notes: 'Ponte em crescendo' }],
+      songs: [
+        { title: 'Grande é o Senhor', key: 'G', notes: 'Ponte em crescendo' },
+      ],
     });
 
     expect(prompt).toContain('"A definir"');
-    expect(prompt).toContain('- Grande é o Senhor (G) | Notas do Líder: Ponte em crescendo');
+    expect(prompt).toContain(
+      '- Grande é o Senhor (G) | Notas do Líder: Ponte em crescendo',
+    );
   });
 });

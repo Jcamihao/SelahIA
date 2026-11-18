@@ -24,7 +24,12 @@ export type AgilisAssigneeSuggestion = {
 
 export type AgilisRedistribution = {
   overview: string;
-  moves: Array<{ from: string; to: string; tasksToMove: number; reason: string }>;
+  moves: Array<{
+    from: string;
+    to: string;
+    tasksToMove: number;
+    reason: string;
+  }>;
 };
 
 export type AgilisStrategicBrief = {
@@ -45,7 +50,10 @@ export const AGILIS_SUMMARY_SCHEMA = {
   type: 'object',
   required: ['summary'],
   properties: {
-    summary: { type: 'string', description: 'Resumo executivo em português do Brasil.' },
+    summary: {
+      type: 'string',
+      description: 'Resumo executivo em português do Brasil.',
+    },
   },
   additionalProperties: false,
 };
@@ -54,7 +62,10 @@ export const AGILIS_ACTION_PLAN_SCHEMA = {
   type: 'object',
   required: ['immediatePriorities', 'nextSteps', 'risks', 'recommendations'],
   properties: {
-    immediatePriorities: stringList('Prioridades imediatas, para esta semana.', 6),
+    immediatePriorities: stringList(
+      'Prioridades imediatas, para esta semana.',
+      6,
+    ),
     nextSteps: stringList('Próximos passos para as próximas 2 semanas.', 6),
     risks: stringList('Riscos identificados nos dados.', 5),
     recommendations: stringList('Recomendações objetivas.', 5),
@@ -66,7 +77,10 @@ export const AGILIS_BOTTLENECKS_SCHEMA = {
   type: 'object',
   required: ['overview', 'bottlenecks'],
   properties: {
-    overview: { type: 'string', description: 'Uma frase sobre a saúde geral do fluxo de trabalho.' },
+    overview: {
+      type: 'string',
+      description: 'Uma frase sobre a saúde geral do fluxo de trabalho.',
+    },
     bottlenecks: {
       type: 'array',
       maxItems: 3,
@@ -96,7 +110,10 @@ export const AGILIS_ASSIGNEE_SCHEMA = {
         type: 'object',
         required: ['name', 'reason'],
         properties: {
-          name: { type: 'string', description: 'Nome exatamente como aparece na lista de membros.' },
+          name: {
+            type: 'string',
+            description: 'Nome exatamente como aparece na lista de membros.',
+          },
           reason: { type: 'string' },
         },
         additionalProperties: false,
@@ -110,7 +127,10 @@ export const AGILIS_STRATEGIC_BRIEF_SCHEMA = {
   type: 'object',
   required: ['summary', 'risks', 'opportunities', 'recommendations'],
   properties: {
-    summary: { type: 'string', description: 'Resumo executivo em 2 a 3 frases.' },
+    summary: {
+      type: 'string',
+      description: 'Resumo executivo em 2 a 3 frases.',
+    },
     risks: stringList('Riscos concretos baseados nos dados.', 3),
     opportunities: stringList('Oportunidades de melhoria.', 3),
     recommendations: stringList('Ações prioritárias com impacto esperado.', 4),
@@ -122,7 +142,10 @@ export const AGILIS_REDISTRIBUTION_SCHEMA = {
   type: 'object',
   required: ['overview', 'moves'],
   properties: {
-    overview: { type: 'string', description: 'Uma ou duas frases sobre o desequilíbrio de carga.' },
+    overview: {
+      type: 'string',
+      description: 'Uma ou duas frases sobre o desequilíbrio de carga.',
+    },
     moves: {
       type: 'array',
       maxItems: 5,
@@ -130,8 +153,14 @@ export const AGILIS_REDISTRIBUTION_SCHEMA = {
         type: 'object',
         required: ['from', 'to', 'tasksToMove', 'reason'],
         properties: {
-          from: { type: 'string', description: 'Nome exatamente como na lista de sobrecarregados.' },
-          to: { type: 'string', description: 'Nome exatamente como na lista de disponíveis.' },
+          from: {
+            type: 'string',
+            description: 'Nome exatamente como na lista de sobrecarregados.',
+          },
+          to: {
+            type: 'string',
+            description: 'Nome exatamente como na lista de disponíveis.',
+          },
           tasksToMove: { type: 'integer', minimum: 1 },
           reason: { type: 'string' },
         },
@@ -149,7 +178,11 @@ const asObject = (payload: unknown, label: string) => {
   return payload as Record<string, unknown>;
 };
 
-const readString = (payload: Record<string, unknown>, key: string, maxLength: number) => {
+const readString = (
+  payload: Record<string, unknown>,
+  key: string,
+  maxLength: number,
+) => {
   const value = String(payload[key] ?? '').trim();
   if (!value) {
     throw new Error(`Campo obrigatório ausente: ${key}`);
@@ -180,7 +213,9 @@ export const validateAgilisSummary = (payload: unknown): AgilisSummary => ({
   summary: readString(asObject(payload, 'resumo'), 'summary', 1500),
 });
 
-export const validateAgilisActionPlan = (payload: unknown): AgilisActionPlan => {
+export const validateAgilisActionPlan = (
+  payload: unknown,
+): AgilisActionPlan => {
   const p = asObject(payload, 'plano de ação');
   return {
     immediatePriorities: readList(p, 'immediatePriorities', 6, 300, 1),
@@ -190,13 +225,18 @@ export const validateAgilisActionPlan = (payload: unknown): AgilisActionPlan => 
   };
 };
 
-export const validateAgilisBottlenecks = (payload: unknown): AgilisBottleneckAnalysis => {
+export const validateAgilisBottlenecks = (
+  payload: unknown,
+): AgilisBottleneckAnalysis => {
   const p = asObject(payload, 'gargalos');
   const raw = Array.isArray(p.bottlenecks) ? p.bottlenecks : [];
   return {
     overview: readString(p, 'overview', 500),
     bottlenecks: raw
-      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === 'object',
+      )
       .slice(0, 3)
       .map((item) => ({
         title: readString(item, 'title', 200),
@@ -206,12 +246,17 @@ export const validateAgilisBottlenecks = (payload: unknown): AgilisBottleneckAna
   };
 };
 
-export const validateAgilisAssignee = (payload: unknown): AgilisAssigneeSuggestion => {
+export const validateAgilisAssignee = (
+  payload: unknown,
+): AgilisAssigneeSuggestion => {
   const p = asObject(payload, 'sugestão de responsável');
   const raw = Array.isArray(p.suggestions) ? p.suggestions : [];
   return {
     suggestions: raw
-      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === 'object',
+      )
       .slice(0, 2)
       .map((item) => ({
         name: readString(item, 'name', 120),
@@ -220,7 +265,9 @@ export const validateAgilisAssignee = (payload: unknown): AgilisAssigneeSuggesti
   };
 };
 
-export const validateAgilisStrategicBrief = (payload: unknown): AgilisStrategicBrief => {
+export const validateAgilisStrategicBrief = (
+  payload: unknown,
+): AgilisStrategicBrief => {
   const p = asObject(payload, 'brief estratégico');
   return {
     summary: readString(p, 'summary', 1200),
@@ -230,13 +277,18 @@ export const validateAgilisStrategicBrief = (payload: unknown): AgilisStrategicB
   };
 };
 
-export const validateAgilisRedistribution = (payload: unknown): AgilisRedistribution => {
+export const validateAgilisRedistribution = (
+  payload: unknown,
+): AgilisRedistribution => {
   const p = asObject(payload, 'redistribuição de carga');
   const raw = Array.isArray(p.moves) ? p.moves : [];
   return {
     overview: readString(p, 'overview', 600),
     moves: raw
-      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === 'object',
+      )
       .slice(0, 5)
       .map((item) => ({
         from: readString(item, 'from', 120),
@@ -246,4 +298,3 @@ export const validateAgilisRedistribution = (payload: unknown): AgilisRedistribu
       })),
   };
 };
-

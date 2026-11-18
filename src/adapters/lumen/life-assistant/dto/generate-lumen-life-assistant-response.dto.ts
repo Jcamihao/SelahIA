@@ -151,7 +151,13 @@ export class GenerateLumenLifeAssistantResponseDto {
   @IsString()
   @MaxLength(40)
   @IsIn(['dashboard', 'tasks', 'finances', 'goals', 'imports', 'general'])
-  originModule?: 'dashboard' | 'tasks' | 'finances' | 'goals' | 'imports' | 'general';
+  originModule?:
+    | 'dashboard'
+    | 'tasks'
+    | 'finances'
+    | 'goals'
+    | 'imports'
+    | 'general';
 
   @IsOptional()
   @IsString()

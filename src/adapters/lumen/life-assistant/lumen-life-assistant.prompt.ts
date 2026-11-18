@@ -42,8 +42,7 @@ const classifyQuestion = (
     input.intent === 'finance_overview' ||
     FINANCIAL_GUIDANCE_PATTERN.test(message);
   const isPersonalGuidance =
-    isPersonalGuidanceQuestion(message) &&
-    input.intent === 'general';
+    isPersonalGuidanceQuestion(message) && input.intent === 'general';
 
   if (isDebtGuidance) {
     return {
@@ -134,8 +133,12 @@ export const buildLumenLifeAssistantPrompt = (
   const questionFacts = extractQuestionFacts(input.message);
   const questionProfile = classifyQuestion(input, questionFacts);
   const openTasks = (input.openTasks || []).map((task) => {
-    const due = task.dueDateLabel ? `vence ${task.dueDateLabel}` : 'sem prazo informado';
-    const category = task.category ? `categoria ${task.category}` : 'sem categoria';
+    const due = task.dueDateLabel
+      ? `vence ${task.dueDateLabel}`
+      : 'sem prazo informado';
+    const category = task.category
+      ? `categoria ${task.category}`
+      : 'sem categoria';
     const impact =
       task.hasFinancialImpact && Number.isFinite(task.estimatedAmount)
         ? `impacto financeiro estimado de ${Number(task.estimatedAmount).toFixed(2)}`
@@ -159,8 +162,7 @@ export const buildLumenLifeAssistantPrompt = (
   });
 
   const activeInsights = (input.activeInsights || []).map(
-    (insight) =>
-      `${insight.severity} | ${insight.type} | ${insight.message}`,
+    (insight) => `${insight.severity} | ${insight.type} | ${insight.message}`,
   );
 
   const preferredAnchors = [
@@ -168,7 +170,9 @@ export const buildLumenLifeAssistantPrompt = (
     ...(input.matchedQuestionTargets || [])
       .slice(0, 3)
       .map((target) => `Alvo citado: ${target}`),
-    ...(input.openTasks || []).slice(0, 3).map((task) => `Tarefa: ${task.title}`),
+    ...(input.openTasks || [])
+      .slice(0, 3)
+      .map((task) => `Tarefa: ${task.title}`),
     ...(input.recentTransactions || [])
       .slice(0, 2)
       .map(
@@ -298,7 +302,9 @@ Exemplo ilustrativo do nível de especificidade esperado (dados fictícios, não
 - highlights de exemplo: ["Dívida citada pelo usuário: 8 mil.", "Tarefa aberta ligada ao problema: Renegociar fatura antiga (R$ 500,00).", "Saldo previsto: R$ 900,00 com risco MEDIUM."]
 - suggestedActions de exemplo: ["Conclua \\"Renegociar fatura antiga\\" hoje para mapear juros e parcelas.", "Negocie primeiro a dívida com maior juros ou já em atraso.", "Defina uma parcela mensal que caiba no orçamento sem tocar no básico.", "Registre qualquer negociação feita para acompanhar o progresso."]
 - Note como o exemplo cita a tarefa e os valores pelo nome exato, em vez de dizer "uma tarefa" ou "um valor alto". Gere a resposta real inteiramente a partir do contexto real enviado abaixo, nunca a partir deste exemplo.
-${options?.tightenSpecificity ? `
+${
+  options?.tightenSpecificity
+    ? `
 
 Correção obrigatória de especificidade:
 - A versão anterior ficou genérica demais para o padrão do LUMEN.
@@ -306,17 +312,27 @@ Correção obrigatória de especificidade:
 - Se houver 3 ou mais itens nomeados disponíveis, use pelo menos 2 deles explicitamente.
 - Não devolva conselhos genéricos sem alvo definido.
 - Se a pergunta trouxer um problema concreto, entregue uma leitura e um plano, não só um comentário.
-- Aumente o detalhamento útil sem perder objetividade.` : ''}
-${options?.forceQuestionLedPlan ? `
+- Aumente o detalhamento útil sem perder objetividade.`
+    : ''
+}
+${
+  options?.forceQuestionLedPlan
+    ? `
 
 Correção obrigatória de aderência à pergunta:
 - A pergunta exige resposta centrada no problema do usuário.
 - A primeira frase do answer deve dizer o que fazer ou qual lógica seguir diante do problema descrito.
 - Não abra com panorama do app.
-- Se houver dívida, dificuldade financeira, desorganização da rotina ou travamento pessoal, o card precisa soar como orientação aplicada ao caso, não como resumo institucional.` : ''}
-${options?.retryFeedback ? `
+- Se houver dívida, dificuldade financeira, desorganização da rotina ou travamento pessoal, o card precisa soar como orientação aplicada ao caso, não como resumo institucional.`
+    : ''
+}
+${
+  options?.retryFeedback
+    ? `
 
 Feedback objetivo para a nova tentativa:
-${String(options.retryFeedback).trim()}` : ''}
+${String(options.retryFeedback).trim()}`
+    : ''
+}
   `.trim();
 };

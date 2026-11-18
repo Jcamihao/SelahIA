@@ -56,17 +56,33 @@ export interface ChurchHealthAnalysis {
 export const SERVICE_REPORTS_MONTHLY_SUMMARY_SCHEMA = {
   type: 'object',
   required: [
-    'period', 'headline', 'overallTrend',
-    'attendanceTrend', 'visitorTrend', 'offeringTrend',
-    'highlights', 'attentionPoints', 'recommendations', 'closingMessage',
+    'period',
+    'headline',
+    'overallTrend',
+    'attendanceTrend',
+    'visitorTrend',
+    'offeringTrend',
+    'highlights',
+    'attentionPoints',
+    'recommendations',
+    'closingMessage',
   ],
   properties: {
     period: { type: 'string' },
     headline: { type: 'string' },
-    overallTrend: { type: 'string', enum: ['crescimento', 'estabilidade', 'queda'] },
+    overallTrend: {
+      type: 'string',
+      enum: ['crescimento', 'estabilidade', 'queda'],
+    },
     attendanceTrend: {
       type: 'object',
-      required: ['average', 'peakValue', 'peakDate', 'changePercent', 'insight'],
+      required: [
+        'average',
+        'peakValue',
+        'peakDate',
+        'changePercent',
+        'insight',
+      ],
       properties: {
         average: { type: 'number' },
         peakValue: { type: 'number' },
@@ -94,9 +110,19 @@ export const SERVICE_REPORTS_MONTHLY_SUMMARY_SCHEMA = {
         insight: { type: 'string' },
       },
     },
-    highlights: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 5 },
+    highlights: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 5,
+    },
     attentionPoints: { type: 'array', items: { type: 'string' }, maxItems: 4 },
-    recommendations: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 4 },
+    recommendations: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 4,
+    },
     closingMessage: { type: 'string' },
   },
   additionalProperties: false,
@@ -104,7 +130,13 @@ export const SERVICE_REPORTS_MONTHLY_SUMMARY_SCHEMA = {
 
 export const CHURCH_HEALTH_SCHEMA = {
   type: 'object',
-  required: ['healthScore', 'engagementLevel', 'trends', 'alerts', 'pastoralInsights'],
+  required: [
+    'healthScore',
+    'engagementLevel',
+    'trends',
+    'alerts',
+    'pastoralInsights',
+  ],
   properties: {
     healthScore: { type: 'number' },
     engagementLevel: { type: 'string', enum: ['baixo', 'médio', 'alto'] },
@@ -115,7 +147,10 @@ export const CHURCH_HEALTH_SCHEMA = {
         required: ['metric', 'trend'],
         properties: {
           metric: { type: 'string' },
-          trend: { type: 'string', enum: ['crescimento', 'estabilidade', 'queda'] },
+          trend: {
+            type: 'string',
+            enum: ['crescimento', 'estabilidade', 'queda'],
+          },
           percentage: { type: 'number' },
         },
       },
@@ -149,7 +184,12 @@ export function validateServiceReportsAiMonthlySummary(
     throw new Error('Resposta inválida do Selah IA: não é um objeto.');
   }
 
-  const requiredStrings = ['period', 'headline', 'overallTrend', 'closingMessage'];
+  const requiredStrings = [
+    'period',
+    'headline',
+    'overallTrend',
+    'closingMessage',
+  ];
   for (const key of requiredStrings) {
     if (typeof p[key] !== 'string' || !String(p[key]).trim()) {
       throw new Error(`Campo obrigatório ausente ou inválido: ${key}`);
@@ -172,9 +212,24 @@ export function validateServiceReportsAiMonthlySummary(
     }
   };
 
-  assertTrend(p.attendanceTrend, 'attendanceTrend', ['average', 'peakValue', 'peakDate', 'changePercent', 'insight']);
-  assertTrend(p.visitorTrend, 'visitorTrend', ['total', 'average', 'conversionHighlight', 'insight']);
-  assertTrend(p.offeringTrend, 'offeringTrend', ['total', 'average', 'insight']);
+  assertTrend(p.attendanceTrend, 'attendanceTrend', [
+    'average',
+    'peakValue',
+    'peakDate',
+    'changePercent',
+    'insight',
+  ]);
+  assertTrend(p.visitorTrend, 'visitorTrend', [
+    'total',
+    'average',
+    'conversionHighlight',
+    'insight',
+  ]);
+  assertTrend(p.offeringTrend, 'offeringTrend', [
+    'total',
+    'average',
+    'insight',
+  ]);
 
   const assertArray = (field: string) => {
     if (!Array.isArray(p[field])) {
@@ -188,12 +243,20 @@ export function validateServiceReportsAiMonthlySummary(
   return p as ServiceReportsAiMonthlySummary;
 }
 
-export function validateChurchHealthAnalysis(payload: unknown): ChurchHealthAnalysis {
+export function validateChurchHealthAnalysis(
+  payload: unknown,
+): ChurchHealthAnalysis {
   const p = payload as Record<string, any>;
   if (!p || typeof p !== 'object') {
     throw new Error('Análise de saúde inválida.');
   }
-  if (typeof p.healthScore !== 'number' || !p.engagementLevel || !Array.isArray(p.trends) || !Array.isArray(p.alerts) || !p.pastoralInsights) {
+  if (
+    typeof p.healthScore !== 'number' ||
+    !p.engagementLevel ||
+    !Array.isArray(p.trends) ||
+    !Array.isArray(p.alerts) ||
+    !p.pastoralInsights
+  ) {
     throw new Error('Campos obrigatórios de saúde ausentes.');
   }
   return p as ChurchHealthAnalysis;

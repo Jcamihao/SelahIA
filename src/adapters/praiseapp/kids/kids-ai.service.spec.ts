@@ -114,12 +114,27 @@ const eventSuggestion = {
 
 const serviceMethods: Array<[string, string, string, unknown]> = [
   ['generateLessonPlan', 'suggestion', 'lesson plan', lessonPlan],
-  ['generateDailyCheckinSummary', 'summary', 'check-in summary', checkinSummary],
+  [
+    'generateDailyCheckinSummary',
+    'summary',
+    'check-in summary',
+    checkinSummary,
+  ],
   ['generateNextSequence', 'sequence', 'next sequence', sequence],
   ['expandWeeklyVerse', 'expansion', 'verse expansion', verseExpansion],
-  ['generateOperationalAssistant', 'assistant', 'operational assistant', operationalAssistant],
+  [
+    'generateOperationalAssistant',
+    'assistant',
+    'operational assistant',
+    operationalAssistant,
+  ],
   ['generateAgeAdaptations', 'adaptations', 'age adaptations', ageAdaptations],
-  ['generatePostClassCommunication', 'communication', 'post-class communication', postClass],
+  [
+    'generatePostClassCommunication',
+    'communication',
+    'post-class communication',
+    postClass,
+  ],
   ['generateEventSuggestion', 'event', 'event suggestion', eventSuggestion],
 ];
 
@@ -197,19 +212,29 @@ describe('kids validators', () => {
 
   it('requires each mandatory text field', () => {
     expect(() =>
-      validatePraiseAppKidsCheckinDailySummary({ ...checkinSummary, headline: '' }),
+      validatePraiseAppKidsCheckinDailySummary({
+        ...checkinSummary,
+        headline: '',
+      }),
     ).toThrow('headline');
     expect(() =>
-      validatePraiseAppKidsWeeklyVerseExpansion({ ...verseExpansion, parentPhrase: null }),
+      validatePraiseAppKidsWeeklyVerseExpansion({
+        ...verseExpansion,
+        parentPhrase: null,
+      }),
     ).toThrow('parentPhrase');
     expect(() =>
-      validatePraiseAppKidsEventSuggestion({ ...eventSuggestion, description: undefined }),
+      validatePraiseAppKidsEventSuggestion({
+        ...eventSuggestion,
+        description: undefined,
+      }),
     ).toThrow('description');
   });
 
   it('rounds durationMin and requires at least one age version', () => {
     expect(
-      validatePraiseAppKidsAgeAdaptations(ageAdaptations).versions[0].durationMin,
+      validatePraiseAppKidsAgeAdaptations(ageAdaptations).versions[0]
+        .durationMin,
     ).toBe(20);
     expect(() =>
       validatePraiseAppKidsAgeAdaptations({ baseReference: 'x', versions: [] }),
@@ -245,7 +270,9 @@ describe('kids prompts', () => {
 
     expect(prompt).toContain('Faixa etária: 5-7 anos');
     expect(prompt).toContain('Duração aproximada: 35 minutos');
-    expect(prompt).toContain('Templates recentes: nenhum item relevante informado.');
+    expect(prompt).toContain(
+      'Templates recentes: nenhum item relevante informado.',
+    );
     expect(prompt).toContain('nenhuma observação adicional informada.');
   });
 

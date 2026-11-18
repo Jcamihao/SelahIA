@@ -65,4 +65,3 @@ export class GeneratePraiseAppKidsLessonPlanDto {
   @MaxLength(1200)
   activeWeeklyVerseText?: string;
 }
-

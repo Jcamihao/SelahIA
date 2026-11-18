@@ -66,10 +66,7 @@ export class LumenLifeAssistantService {
     private readonly requestContext: RequestContextService,
   ) {}
 
-  private responseMeta(
-    model: string,
-    provider = resolveActiveProviderLabel(),
-  ) {
+  private responseMeta(model: string, provider = resolveActiveProviderLabel()) {
     return {
       provider,
       version: String(process.env.SELAH_PUBLIC_VERSION || 'v1').trim() || 'v1',
@@ -78,9 +75,7 @@ export class LumenLifeAssistantService {
     };
   }
 
-  async chat(
-    input: GenerateLumenLifeAssistantResponseDto,
-  ): Promise<
+  async chat(input: GenerateLumenLifeAssistantResponseDto): Promise<
     {
       provider: string;
       version: string;
@@ -182,12 +177,16 @@ export class LumenLifeAssistantService {
     response: LumenLifeAssistantResponse,
     input: GenerateLumenLifeAssistantResponseDto,
   ) {
-    const combined = this.toSearchableText([
-      response.answer,
-      ...response.highlights,
-      ...response.suggestedActions,
-    ].join(' '));
-    const actionText = this.toSearchableText(response.suggestedActions.join(' '));
+    const combined = this.toSearchableText(
+      [
+        response.answer,
+        ...response.highlights,
+        ...response.suggestedActions,
+      ].join(' '),
+    );
+    const actionText = this.toSearchableText(
+      response.suggestedActions.join(' '),
+    );
     const namedAnchors = this.collectNamedAnchors(input);
     const questionAnchors = this.collectQuestionAnchors(input);
     const explicitQuestionTargets = (input.matchedQuestionTargets || []).filter(
@@ -417,7 +416,9 @@ export class LumenLifeAssistantService {
       Number(input.forecast.predictedBalance || 0),
       input.user.preferredCurrency,
     );
-    const risk = String(input.forecast.riskLevel || 'desconhecido').toLowerCase();
+    const risk = String(
+      input.forecast.riskLevel || 'desconhecido',
+    ).toLowerCase();
 
     return {
       answer: amount
@@ -463,11 +464,12 @@ export class LumenLifeAssistantService {
       Number(input.forecast.predictedBalance || 0),
       input.user.preferredCurrency,
     );
-    const risk = String(input.forecast.riskLevel || 'desconhecido').toLowerCase();
+    const risk = String(
+      input.forecast.riskLevel || 'desconhecido',
+    ).toLowerCase();
 
     return {
-      answer:
-        `Seu pedido pede reorganização financeira prática, não só panorama. Hoje o melhor caminho é decidir onde o caixa pode respirar, porque você está com ${balance} agora, ${monthlyIncome} de entradas no mês, ${monthlyExpenses} de saídas e previsão de ${predictedBalance}.`,
+      answer: `Seu pedido pede reorganização financeira prática, não só panorama. Hoje o melhor caminho é decidir onde o caixa pode respirar, porque você está com ${balance} agora, ${monthlyIncome} de entradas no mês, ${monthlyExpenses} de saídas e previsão de ${predictedBalance}.`,
       highlights: this.uniqueStrings([
         `Risco atual da previsão: ${risk}.`,
         'A resposta precisa virar plano de corte, negociação ou priorização, não comentário genérico.',
@@ -539,11 +541,7 @@ export class LumenLifeAssistantService {
 
   private uniqueStrings(items: Array<string | null | undefined>) {
     return Array.from(
-      new Set(
-        items
-          .map((item) => String(item || '').trim())
-          .filter(Boolean),
-      ),
+      new Set(items.map((item) => String(item || '').trim()).filter(Boolean)),
     );
   }
 

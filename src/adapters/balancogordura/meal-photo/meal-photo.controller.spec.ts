@@ -5,7 +5,10 @@ import * as request from 'supertest';
 import { InternalApiKeyGuard } from '../../../common/auth/internal-api-key.guard';
 import { RequestContextService } from '../../../common/logging/request-context.service';
 import { LLM_PROVIDER_TOKEN } from '../../../providers/provider.tokens';
-import { MEAL_PHOTO_FOOD_KEYS, MEAL_PHOTO_FOOD_PREPAROS } from './meal-photo.food-keys';
+import {
+  MEAL_PHOTO_FOOD_KEYS,
+  MEAL_PHOTO_FOOD_PREPAROS,
+} from './meal-photo.food-keys';
 import { MealPhotoController } from './meal-photo.controller';
 import { MealPhotoService } from './meal-photo.service';
 
@@ -47,8 +50,14 @@ describe('POST /v1/adapters/balancogordura/meal-photo/analyze', () => {
       controllers: [MealPhotoController],
       providers: [
         MealPhotoService,
-        { provide: LLM_PROVIDER_TOKEN, useValue: { generateStructuredFromContents } },
-        { provide: RequestContextService, useValue: { getRequestId: () => 'req-http' } },
+        {
+          provide: LLM_PROVIDER_TOKEN,
+          useValue: { generateStructuredFromContents },
+        },
+        {
+          provide: RequestContextService,
+          useValue: { getRequestId: () => 'req-http' },
+        },
       ],
     })
       .overrideGuard(InternalApiKeyGuard)
@@ -58,7 +67,11 @@ describe('POST /v1/adapters/balancogordura/meal-photo/analyze', () => {
     app = moduleRef.createNestApplication({ bodyParser: false });
     app.use(json({ limit: '20mb' }));
     app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
     );
     await app.init();
   });
@@ -71,7 +84,9 @@ describe('POST /v1/adapters/balancogordura/meal-photo/analyze', () => {
   });
 
   const post = (payload: unknown) =>
-    request(app.getHttpServer()).post('/v1/adapters/balancogordura/meal-photo/analyze').send(payload as object);
+    request(app.getHttpServer())
+      .post('/v1/adapters/balancogordura/meal-photo/analyze')
+      .send(payload as object);
 
   it('responde 200 com status, items e questions e sem calorias', async () => {
     const res = await post(body());
@@ -114,12 +129,21 @@ describe('POST /v1/adapters/balancogordura/meal-photo/analyze', () => {
   });
 
   it('preparo fora da tabela daquele alimento vira "outro" e a resposta continua 200 com os demais itens', async () => {
-    const forbidden = ['frito', 'cozido', 'cru', 'refogado', 'empanado', 'assado', 'grelhado'].find(
-      (p) => !MEAL_PHOTO_FOOD_PREPAROS[KEY].includes(p),
-    );
+    const forbidden = [
+      'frito',
+      'cozido',
+      'cru',
+      'refogado',
+      'empanado',
+      'assado',
+      'grelhado',
+    ].find((p) => !MEAL_PHOTO_FOOD_PREPAROS[KEY].includes(p));
     parsedByModel = {
       ...okParsed,
-      items: [okParsed.items[0], { ...okParsed.items[0], preparo: forbidden, confidence: 'alta' }],
+      items: [
+        okParsed.items[0],
+        { ...okParsed.items[0], preparo: forbidden, confidence: 'alta' },
+      ],
     };
 
     const res = await post(body());

@@ -175,16 +175,17 @@ export function validateLumenReceiptParseResponse(
       p.subtotal === null || p.subtotal === undefined
         ? null
         : Number(p.subtotal),
-    taxAmount:
-      p.tax === null || p.tax === undefined
-        ? null
-        : Number(p.tax),
+    taxAmount: p.tax === null || p.tax === undefined ? null : Number(p.tax),
     currency: String(p.currency || 'BRL').trim() || 'BRL',
     confidence,
-    qrCodeDetected: Boolean(p.qrCodeDetected || normalizeQrCodeText(p.qrCodeText)),
+    qrCodeDetected: Boolean(
+      p.qrCodeDetected || normalizeQrCodeText(p.qrCodeText),
+    ),
     qrCodeText: normalizeQrCodeText(p.qrCodeText),
     notes: (Array.isArray(p.notes) ? p.notes : [])
-      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .filter(
+        (item): item is string => typeof item === 'string' && !!item.trim(),
+      )
       .slice(0, 6),
     rawTextExcerpt:
       p.rawText === null || p.rawText === undefined
@@ -199,14 +200,20 @@ export function validateLumenReceiptParseResponse(
         ? null
         : String(p.purchaseMission).trim() || null,
     spendingSignals: (Array.isArray(p.spendingSignals) ? p.spendingSignals : [])
-      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .filter(
+        (item): item is string => typeof item === 'string' && !!item.trim(),
+      )
       .slice(0, 5),
     followUpActions: (Array.isArray(p.followUpActions) ? p.followUpActions : [])
-      .filter((item): item is string => typeof item === 'string' && !!item.trim())
+      .filter(
+        (item): item is string => typeof item === 'string' && !!item.trim(),
+      )
       .slice(0, 5),
     items: items
       .map((item) => item as Record<string, unknown>)
-      .filter((item) => typeof item.name === 'string' && !!String(item.name).trim())
+      .filter(
+        (item) => typeof item.name === 'string' && !!String(item.name).trim(),
+      )
       .slice(0, 100)
       .map((item) => ({
         description: normalizeItemDescription(String(item.name).trim()),
@@ -224,8 +231,13 @@ export function validateLumenReceiptParseResponse(
   };
 }
 
-function normalizeReceiptConfidence(value: unknown): LumenReceiptParseConfidence {
-  const raw = value === null || value === undefined ? '' : String(value).trim().toLowerCase();
+function normalizeReceiptConfidence(
+  value: unknown,
+): LumenReceiptParseConfidence {
+  const raw =
+    value === null || value === undefined
+      ? ''
+      : String(value).trim().toLowerCase();
 
   if (raw === 'low' || raw === 'medium' || raw === 'high') {
     return raw;

@@ -62,7 +62,11 @@ export class InternalApiKeyGuard implements CanActivate {
       }
     } else {
       const allowedApps = parseList(process.env.SELAH_ALLOWED_SOURCE_APPS);
-      if (allowedApps.length && claimedApp && !allowedApps.includes(claimedApp)) {
+      if (
+        allowedApps.length &&
+        claimedApp &&
+        !allowedApps.includes(claimedApp)
+      ) {
         this.logger.warn(
           `[${requestId}] Source application not allowed. source=${claimedApp}`,
         );

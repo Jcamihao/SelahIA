@@ -66,9 +66,7 @@ export class KidsAiService {
     };
   }
 
-  async generateLessonPlan(
-    input: GeneratePraiseAppKidsLessonPlanDto,
-  ): Promise<{
+  async generateLessonPlan(input: GeneratePraiseAppKidsLessonPlanDto): Promise<{
     provider: string;
     version: string;
     model: string;
@@ -200,9 +198,7 @@ export class KidsAiService {
       thinkingBudget: 0,
     });
 
-    this.logger.log(
-      `[${requestId}] Kids weekly verse expansion completed`,
-    );
+    this.logger.log(`[${requestId}] Kids weekly verse expansion completed`);
 
     return {
       ...this.responseMeta(result.model),
@@ -309,9 +305,7 @@ export class KidsAiService {
       thinkingBudget: 0,
     });
 
-    this.logger.log(
-      `[${requestId}] Kids post-class communication completed`,
-    );
+    this.logger.log(`[${requestId}] Kids post-class communication completed`);
 
     return {
       ...this.responseMeta(result.model),

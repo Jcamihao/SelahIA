@@ -48,7 +48,8 @@ const createService = (parsed: unknown) => {
 
 describe('MealPhotoService', () => {
   it('chama o provedor uma vez com um conteudo que traz inline_data (mime e base64)', async () => {
-    const { service, generateStructuredFromContents } = createService(validParsed);
+    const { service, generateStructuredFromContents } =
+      createService(validParsed);
 
     await service.analyze(input);
 
@@ -56,7 +57,10 @@ describe('MealPhotoService', () => {
     const call = generateStructuredFromContents.mock.calls[0][0];
     const parts = call.contents[0].parts;
     expect(parts[0].text).toContain('BalancoGordura');
-    expect(parts[1].inline_data).toEqual({ mime_type: 'image/jpeg', data: 'aGVsbG8=' });
+    expect(parts[1].inline_data).toEqual({
+      mime_type: 'image/jpeg',
+      data: 'aGVsbG8=',
+    });
     expect(call.responseSchema).toBe(MEAL_PHOTO_SCHEMA);
     expect(call.temperature).toBeLessThanOrEqual(0.2);
   });
@@ -81,7 +85,9 @@ describe('MealPhotoService', () => {
       items: [{ ...validParsed.items[0], foodKey: 'chave_inventada_xyz' }],
     });
 
-    await expect(service.analyze(input)).rejects.toBeInstanceOf(BadGatewayException);
+    await expect(service.analyze(input)).rejects.toBeInstanceOf(
+      BadGatewayException,
+    );
   });
 
   it('status nao_e_comida e qualidade_baixa nao geram erro e vem sem itens', async () => {
@@ -125,7 +131,12 @@ describe('buildMealPhotoPrompt', () => {
     }
     expect(prompt).toContain(`${KEY}`);
     expect(prompt).toContain(MEAL_PHOTO_FOOD_PREPAROS[KEY][0]);
-    for (const id of ['oleo_preparo', 'molho', 'tempero_salada', 'queijo_extra']) {
+    for (const id of [
+      'oleo_preparo',
+      'molho',
+      'tempero_salada',
+      'queijo_extra',
+    ]) {
       expect(prompt).toContain(id);
     }
     expect(prompt).toContain('"outro"');
@@ -157,6 +168,8 @@ describe('buildMealPhotoPrompt', () => {
 
   it('usa o tipo de refeicao so como contexto e omite o bloco quando ele nao vem', () => {
     expect(buildMealPhotoPrompt({ mealType: 'jantar' })).toContain('jantar');
-    expect(buildMealPhotoPrompt({})).not.toContain('Tipo de refeicao informado');
+    expect(buildMealPhotoPrompt({})).not.toContain(
+      'Tipo de refeicao informado',
+    );
   });
 });

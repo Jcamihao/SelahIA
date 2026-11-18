@@ -19,7 +19,10 @@ export const WORSHIP_SETLIST_SUGGESTION_SCHEMA = {
         properties: {
           songId: { type: 'number' },
           matchReason: { type: 'string' },
-          position: { type: 'string', enum: ['Abertura', 'Celebração', 'Adoração', 'Encerramento'] },
+          position: {
+            type: 'string',
+            enum: ['Abertura', 'Celebração', 'Adoração', 'Encerramento'],
+          },
         },
       },
     },
@@ -46,7 +49,12 @@ export const WORSHIP_REHEARSAL_NOTES_SCHEMA = {
       type: 'array',
       items: {
         type: 'object',
-        required: ['title', 'focusHighlights', 'vocalDynamics', 'instrumentalNotes'],
+        required: [
+          'title',
+          'focusHighlights',
+          'vocalDynamics',
+          'instrumentalNotes',
+        ],
         properties: {
           title: { type: 'string' },
           focusHighlights: { type: 'array', items: { type: 'string' } },
@@ -60,15 +68,27 @@ export const WORSHIP_REHEARSAL_NOTES_SCHEMA = {
   additionalProperties: false,
 };
 
-export function validateWorshipSetlistSuggestion(data: any): WorshipSetlistSuggestion {
-  if (!data || !Array.isArray(data.suggestions) || typeof data.flowInsight !== 'string') {
+export function validateWorshipSetlistSuggestion(
+  data: any,
+): WorshipSetlistSuggestion {
+  if (
+    !data ||
+    !Array.isArray(data.suggestions) ||
+    typeof data.flowInsight !== 'string'
+  ) {
     throw new Error('Resposta da IA inválida para sugestão de setlist.');
   }
   return data as WorshipSetlistSuggestion;
 }
 
-export function validateWorshipRehearsalNotes(data: any): WorshipRehearsalNotes {
-  if (!data || !Array.isArray(data.sections) || typeof data.overallDynamics !== 'string') {
+export function validateWorshipRehearsalNotes(
+  data: any,
+): WorshipRehearsalNotes {
+  if (
+    !data ||
+    !Array.isArray(data.sections) ||
+    typeof data.overallDynamics !== 'string'
+  ) {
     throw new Error('Resposta da IA inválida para notas de ensaio.');
   }
   return data as WorshipRehearsalNotes;

@@ -17,9 +17,7 @@ export class KidsAiController {
 
   @Post('lesson-plan/generate')
   @HttpCode(200)
-  async generateLessonPlan(
-    @Body() dto: GeneratePraiseAppKidsLessonPlanDto,
-  ) {
+  async generateLessonPlan(@Body() dto: GeneratePraiseAppKidsLessonPlanDto) {
     const response = await this.kidsAiService.generateLessonPlan(dto);
     return {
       message: 'Sugestão de aula gerada com Selah IA.',
@@ -41,7 +39,9 @@ export class KidsAiController {
 
   @Post('lesson-plan/next-sequence')
   @HttpCode(200)
-  async generateNextSequence(@Body() dto: GeneratePraiseAppKidsNextSequenceDto) {
+  async generateNextSequence(
+    @Body() dto: GeneratePraiseAppKidsNextSequenceDto,
+  ) {
     const response = await this.kidsAiService.generateNextSequence(dto);
     return {
       message: 'Sequência pedagógica sugerida com Selah IA.',
@@ -90,7 +90,8 @@ export class KidsAiController {
   async generatePostClassCommunication(
     @Body() dto: GeneratePraiseAppKidsPostClassCommunicationDto,
   ) {
-    const response = await this.kidsAiService.generatePostClassCommunication(dto);
+    const response =
+      await this.kidsAiService.generatePostClassCommunication(dto);
     return {
       message: 'Comunicação pós-aula gerada com Selah IA.',
       response,

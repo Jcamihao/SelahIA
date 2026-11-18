@@ -49,8 +49,12 @@ describe('ApiKeyRegistry', () => {
       SELAH_APP_KEYS: 'LumenBack:old-key,LumenBack:new-key',
     });
 
-    expect(registry.authenticate('old-key')).toMatchObject({ app: 'LumenBack' });
-    expect(registry.authenticate('new-key')).toMatchObject({ app: 'LumenBack' });
+    expect(registry.authenticate('old-key')).toMatchObject({
+      app: 'LumenBack',
+    });
+    expect(registry.authenticate('new-key')).toMatchObject({
+      app: 'LumenBack',
+    });
   });
 
   it('treats SELAH_INTERNAL_API_KEYS as legacy keys without an app identity', () => {
@@ -86,13 +90,22 @@ describe('ApiKeyRegistry', () => {
 
   it('refuses the known development key in production only', () => {
     expect(() =>
-      create({ NODE_ENV: 'production', SELAH_INTERNAL_API_KEYS: 'selah-dev-key' }),
+      create({
+        NODE_ENV: 'production',
+        SELAH_INTERNAL_API_KEYS: 'selah-dev-key',
+      }),
     ).toThrow('desenvolvimento');
     expect(() =>
-      create({ NODE_ENV: 'production', SELAH_APP_KEYS: 'LumenBack:selah-dev-key' }),
+      create({
+        NODE_ENV: 'production',
+        SELAH_APP_KEYS: 'LumenBack:selah-dev-key',
+      }),
     ).toThrow('desenvolvimento');
     expect(() =>
-      create({ NODE_ENV: 'development', SELAH_INTERNAL_API_KEYS: 'selah-dev-key' }),
+      create({
+        NODE_ENV: 'development',
+        SELAH_INTERNAL_API_KEYS: 'selah-dev-key',
+      }),
     ).not.toThrow();
   });
 });

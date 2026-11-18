@@ -1,25 +1,48 @@
 import { GenerateServiceReportsMonthlySummaryDto } from './dto/generate-monthly-summary.dto';
 
 const MONTH_NAMES_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 export function buildServiceReportsMonthlySummaryPrompt(
   input: GenerateServiceReportsMonthlySummaryDto,
 ): string {
-  const monthName = MONTH_NAMES_PT[(input.month ?? 1) - 1] ?? 'Mês desconhecido';
+  const monthName =
+    MONTH_NAMES_PT[(input.month ?? 1) - 1] ?? 'Mês desconhecido';
   const period = `${monthName} de ${input.year}`;
   const orgName = String(input.orgName || 'Igreja').trim() || 'Igreja';
   const reports = input.reports || [];
 
   const totalCultos = reports.length;
-  const totalPresenca = reports.reduce((s, r) => s + Number(r.attendanceCount || 0), 0);
-  const totalVisitantes = reports.reduce((s, r) => s + Number(r.visitorCount || 0), 0);
-  const totalOferta = reports.reduce((s, r) => s + Number(r.offeringValue || 0), 0);
-  const mediaPresenca = totalCultos > 0 ? Math.round(totalPresenca / totalCultos) : 0;
-  const mediaVisitantes = totalCultos > 0 ? Math.round((totalVisitantes / totalCultos) * 10) / 10 : 0;
-  const mediaOferta = totalCultos > 0 ? Math.round((totalOferta / totalCultos) * 100) / 100 : 0;
+  const totalPresenca = reports.reduce(
+    (s, r) => s + Number(r.attendanceCount || 0),
+    0,
+  );
+  const totalVisitantes = reports.reduce(
+    (s, r) => s + Number(r.visitorCount || 0),
+    0,
+  );
+  const totalOferta = reports.reduce(
+    (s, r) => s + Number(r.offeringValue || 0),
+    0,
+  );
+  const mediaPresenca =
+    totalCultos > 0 ? Math.round(totalPresenca / totalCultos) : 0;
+  const mediaVisitantes =
+    totalCultos > 0 ? Math.round((totalVisitantes / totalCultos) * 10) / 10 : 0;
+  const mediaOferta =
+    totalCultos > 0 ? Math.round((totalOferta / totalCultos) * 100) / 100 : 0;
 
   const reportLines = reports
     .map((r, i) => {

@@ -38,7 +38,9 @@ export class ApiKeyRegistry {
         );
       }
       if (isProduction && key === KNOWN_DEV_KEY) {
-        throw new Error('SELAH_APP_KEYS usa a chave de desenvolvimento em producao.');
+        throw new Error(
+          'SELAH_APP_KEYS usa a chave de desenvolvimento em producao.',
+        );
       }
       const previousApp = seen.get(key);
       if (previousApp && previousApp !== app) {

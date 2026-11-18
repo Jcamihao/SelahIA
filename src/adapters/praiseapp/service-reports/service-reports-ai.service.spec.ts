@@ -102,7 +102,10 @@ describe('ServiceReportsAiService', () => {
   });
 
   it('rejects a summary with an unknown overallTrend', async () => {
-    const { service } = createService({ ...summary, overallTrend: 'explosivo' });
+    const { service } = createService({
+      ...summary,
+      overallTrend: 'explosivo',
+    });
 
     await expect(
       service.generateMonthlySummary(monthlyInput as any),
@@ -159,7 +162,10 @@ describe('buildChurchHealthPrompt', () => {
 describe('service-reports validators', () => {
   it('rejects a summary missing a trend block or list', () => {
     expect(() =>
-      validateServiceReportsAiMonthlySummary({ ...summary, visitorTrend: undefined }),
+      validateServiceReportsAiMonthlySummary({
+        ...summary,
+        visitorTrend: undefined,
+      }),
     ).toThrow('visitorTrend');
     expect(() =>
       validateServiceReportsAiMonthlySummary({ ...summary, highlights: 'x' }),

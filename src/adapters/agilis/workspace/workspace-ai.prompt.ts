@@ -16,7 +16,9 @@ const percent = (part: number, total: number) =>
 
 const overdueUsersLine = (workspace: AgilisWorkspaceContextDto) =>
   workspace.topOverdueUsers.length
-    ? workspace.topOverdueUsers.map((user) => `${user.name} (${user.count})`).join(', ')
+    ? workspace.topOverdueUsers
+        .map((user) => `${user.name} (${user.count})`)
+        .join(', ')
     : 'nenhum';
 
 export const AGILIS_ANALYST_SYSTEM_INSTRUCTION =
@@ -54,7 +56,9 @@ export const buildAgilisChatContents = (input: AgilisChatDto) => [
   { role: 'user', parts: [{ text: input.message }] },
 ];
 
-export const buildAgilisProjectSummaryPrompt = (input: AgilisProjectSummaryDto) =>
+export const buildAgilisProjectSummaryPrompt = (
+  input: AgilisProjectSummaryDto,
+) =>
   `
 Contexto: produto Agilis, resumo executivo de um projeto.
 
@@ -71,7 +75,10 @@ Instruções:
 export const buildAgilisTaskSummaryPrompt = (input: AgilisTaskSummaryDto) => {
   const comments = (input.comments || []).length
     ? (input.comments || [])
-        .map((comment) => `${comment.authorName}: ${sanitizeFreeText(comment.content, 200)}`)
+        .map(
+          (comment) =>
+            `${comment.authorName}: ${sanitizeFreeText(comment.content, 200)}`,
+        )
         .join('\n')
     : 'Sem comentários.';
 
@@ -140,7 +147,9 @@ Instruções:
 `.trim();
 };
 
-export const buildAgilisSuggestAssigneePrompt = (input: AgilisSuggestAssigneeDto) =>
+export const buildAgilisSuggestAssigneePrompt = (
+  input: AgilisSuggestAssigneeDto,
+) =>
   `
 Contexto: produto Agilis, escolha do responsável por uma tarefa.
 
@@ -154,11 +163,16 @@ Instruções:
 - Em "reason", justifique com a carga de trabalho informada.
 `.trim();
 
-export const buildAgilisStrategicBriefPrompt = (input: AgilisStrategicBriefDto) => {
+export const buildAgilisStrategicBriefPrompt = (
+  input: AgilisStrategicBriefDto,
+) => {
   const { metrics } = input;
   const insights = (input.insights || []).length
     ? (input.insights || [])
-        .map((insight) => `[${insight.severity}] ${insight.title}: ${sanitizeFreeText(insight.description, 300)}`)
+        .map(
+          (insight) =>
+            `[${insight.severity}] ${insight.title}: ${sanitizeFreeText(insight.description, 300)}`,
+        )
         .join('\n')
     : 'Nenhum insight crítico no momento.';
 
@@ -183,13 +197,21 @@ Instruções:
 `.trim();
 };
 
-export const buildAgilisRedistributionPrompt = (input: AgilisWorkloadRedistributionDto) => {
+export const buildAgilisRedistributionPrompt = (
+  input: AgilisWorkloadRedistributionDto,
+) => {
   const overloaded = input.overloaded
-    .map((member) => `- ${member.name}: ${member.openTasks} tarefas abertas, ${member.overdueTasks} atrasadas, carga ${member.capacityScore}/100`)
+    .map(
+      (member) =>
+        `- ${member.name}: ${member.openTasks} tarefas abertas, ${member.overdueTasks} atrasadas, carga ${member.capacityScore}/100`,
+    )
     .join('\n');
   const available = input.available.length
     ? input.available
-        .map((member) => `- ${member.name}: ${member.openTasks} tarefas abertas, ${member.overdueTasks} atrasadas, carga ${member.capacityScore}/100`)
+        .map(
+          (member) =>
+            `- ${member.name}: ${member.openTasks} tarefas abertas, ${member.overdueTasks} atrasadas, carga ${member.capacityScore}/100`,
+        )
         .join('\n')
     : 'Ninguém com folga no momento.';
 
@@ -210,4 +232,3 @@ Instruções:
 - Se ninguém tem folga, devolva moves vazio e explique no overview.
 `.trim();
 };
-

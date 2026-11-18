@@ -8,7 +8,10 @@ import {
   MEAL_PHOTO_FOOD_LABELS,
   MEAL_PHOTO_FOOD_PREPAROS,
 } from './meal-photo.food-keys';
-import { MEAL_PHOTO_SCHEMA, validateMealPhotoResponse } from './meal-photo.schemas';
+import {
+  MEAL_PHOTO_SCHEMA,
+  validateMealPhotoResponse,
+} from './meal-photo.schemas';
 
 const KEY = MEAL_PHOTO_FOOD_KEYS[0];
 const KEY_PREPARO = MEAL_PHOTO_FOOD_PREPAROS[KEY][0];
@@ -42,7 +45,9 @@ describe('validateMealPhotoResponse', () => {
 
   it('rejeita foodKey fora da lista (Review Focus 4)', () => {
     expect(() =>
-      validateMealPhotoResponse(response({ items: [item({ foodKey: INVENTED_KEY })] })),
+      validateMealPhotoResponse(
+        response({ items: [item({ foodKey: INVENTED_KEY })] }),
+      ),
     ).toThrow(BadGatewayException);
   });
 
@@ -68,7 +73,11 @@ describe('validateMealPhotoResponse', () => {
     for (const otherLabel of [null, '', '   ']) {
       expect(() =>
         validateMealPhotoResponse(
-          response({ items: [item({ foodKey: 'outro', otherLabel, confidence: 'baixa' })] }),
+          response({
+            items: [
+              item({ foodKey: 'outro', otherLabel, confidence: 'baixa' }),
+            ],
+          }),
         ),
       ).toThrow(BadGatewayException);
     }
@@ -78,14 +87,26 @@ describe('validateMealPhotoResponse', () => {
     expect(() =>
       validateMealPhotoResponse(
         response({
-          items: [item({ foodKey: 'outro', otherLabel: 'x'.repeat(81), confidence: 'baixa' })],
+          items: [
+            item({
+              foodKey: 'outro',
+              otherLabel: 'x'.repeat(81),
+              confidence: 'baixa',
+            }),
+          ],
         }),
       ),
     ).toThrow(BadGatewayException);
     expect(() =>
       validateMealPhotoResponse(
         response({
-          items: [item({ foodKey: 'outro', otherLabel: 'sopa de abobora', confidence: 'alta' })],
+          items: [
+            item({
+              foodKey: 'outro',
+              otherLabel: 'sopa de abobora',
+              confidence: 'alta',
+            }),
+          ],
         }),
       ),
     ).toThrow(BadGatewayException);
@@ -101,9 +122,15 @@ describe('validateMealPhotoResponse', () => {
 
   describe('preparo fora dos permitidos para o alimento (decisao B)', () => {
     const forbiddenFor = (key: string) =>
-      ['grelhado', 'frito', 'cozido', 'cru', 'refogado', 'empanado', 'assado'].find(
-        (p) => !MEAL_PHOTO_FOOD_PREPAROS[key].includes(p),
-      ) as string;
+      [
+        'grelhado',
+        'frito',
+        'cozido',
+        'cru',
+        'refogado',
+        'empanado',
+        'assado',
+      ].find((p) => !MEAL_PHOTO_FOOD_PREPAROS[key].includes(p)) as string;
 
     it('vira "outro" com o nome do alimento e o preparo, sem derrubar a resposta', () => {
       const forbidden = forbiddenFor(KEY);
@@ -154,11 +181,15 @@ describe('validateMealPhotoResponse', () => {
         (k) => !MEAL_PHOTO_FOOD_PREPAROS[k].includes('nao_se_aplica'),
       ) as string;
       const result = validateMealPhotoResponse(
-        response({ items: [item({ foodKey: withoutNa, preparo: 'nao_se_aplica' })] }),
+        response({
+          items: [item({ foodKey: withoutNa, preparo: 'nao_se_aplica' })],
+        }),
       );
 
       expect(result.items[0].foodKey).toBe('outro');
-      expect(result.items[0].otherLabel).toBe(MEAL_PHOTO_FOOD_LABELS[withoutNa]);
+      expect(result.items[0].otherLabel).toBe(
+        MEAL_PHOTO_FOOD_LABELS[withoutNa],
+      );
       for (const i of result.items) {
         expect((i.otherLabel ?? '').length).toBeLessThanOrEqual(80);
       }
@@ -174,12 +205,21 @@ describe('validateMealPhotoResponse', () => {
 
   it('rejeita preparo que nem esta na lista geral, inclusive para "outro"', () => {
     expect(() =>
-      validateMealPhotoResponse(response({ items: [item({ preparo: 'flambado' })] })),
+      validateMealPhotoResponse(
+        response({ items: [item({ preparo: 'flambado' })] }),
+      ),
     ).toThrow(BadGatewayException);
     expect(() =>
       validateMealPhotoResponse(
         response({
-          items: [item({ foodKey: 'outro', otherLabel: 'x', preparo: 'flambado', confidence: 'baixa' })],
+          items: [
+            item({
+              foodKey: 'outro',
+              otherLabel: 'x',
+              preparo: 'flambado',
+              confidence: 'baixa',
+            }),
+          ],
         }),
       ),
     ).toThrow(BadGatewayException);
@@ -205,7 +245,9 @@ describe('validateMealPhotoResponse', () => {
   it('rejeita gramas que nao sao numero', () => {
     expect(() =>
       validateMealPhotoResponse(
-        response({ items: [item({ grams: { low: '80', mid: 120, high: 160 } })] }),
+        response({
+          items: [item({ grams: { low: '80', mid: 120, high: 160 } })],
+        }),
       ),
     ).toThrow(BadGatewayException);
   });
@@ -231,10 +273,14 @@ describe('validateMealPhotoResponse', () => {
 
   it('rejeita mais de 12 itens', () => {
     expect(() =>
-      validateMealPhotoResponse(response({ items: Array.from({ length: 13 }, () => item()) })),
+      validateMealPhotoResponse(
+        response({ items: Array.from({ length: 13 }, () => item()) }),
+      ),
     ).toThrow(BadGatewayException);
     expect(
-      validateMealPhotoResponse(response({ items: Array.from({ length: 12 }, () => item()) })).items,
+      validateMealPhotoResponse(
+        response({ items: Array.from({ length: 12 }, () => item()) }),
+      ).items,
     ).toHaveLength(12);
   });
 
@@ -245,23 +291,32 @@ describe('validateMealPhotoResponse', () => {
       { id: 'queijo_extra', itemIndex: 0 },
     ];
 
-    expect(() => validateMealPhotoResponse(response({ questions }))).toThrow(BadGatewayException);
+    expect(() => validateMealPhotoResponse(response({ questions }))).toThrow(
+      BadGatewayException,
+    );
   });
 
   it('rejeita pergunta com id fora da lista e itemIndex inexistente', () => {
     expect(() =>
-      validateMealPhotoResponse(response({ questions: [{ id: 'quer_sobremesa', itemIndex: 0 }] })),
+      validateMealPhotoResponse(
+        response({ questions: [{ id: 'quer_sobremesa', itemIndex: 0 }] }),
+      ),
     ).toThrow(BadGatewayException);
     for (const itemIndex of [1, -1, 0.5, '0']) {
       expect(() =>
-        validateMealPhotoResponse(response({ questions: [{ id: 'molho', itemIndex }] })),
+        validateMealPhotoResponse(
+          response({ questions: [{ id: 'molho', itemIndex }] }),
+        ),
       ).toThrow(BadGatewayException);
     }
   });
 
   it('perguntas presentes normalizam o status para precisa_esclarecer', () => {
     const result = validateMealPhotoResponse(
-      response({ status: 'ok', questions: [{ id: 'oleo_preparo', itemIndex: 0 }] }),
+      response({
+        status: 'ok',
+        questions: [{ id: 'oleo_preparo', itemIndex: 0 }],
+      }),
     );
 
     expect(result.status).toBe('precisa_esclarecer');
@@ -281,17 +336,27 @@ describe('validateMealPhotoResponse', () => {
   });
 
   it('status ok sem nenhum item e erro: nao ha refeicao para registrar', () => {
-    expect(() => validateMealPhotoResponse(response({ items: [] }))).toThrow(BadGatewayException);
+    expect(() => validateMealPhotoResponse(response({ items: [] }))).toThrow(
+      BadGatewayException,
+    );
   });
 
   it('rejeita status desconhecido, payload que nao e objeto e campos faltando', () => {
-    expect(() => validateMealPhotoResponse(response({ status: 'talvez' }))).toThrow(BadGatewayException);
-    for (const payload of [null, undefined, 'texto', 42, [], true]) {
-      expect(() => validateMealPhotoResponse(payload)).toThrow(BadGatewayException);
-    }
-    expect(() => validateMealPhotoResponse({ status: 'ok' })).toThrow(BadGatewayException);
     expect(() =>
-      validateMealPhotoResponse(response({ items: [{ ...item(), confidence: 'certeza' }] })),
+      validateMealPhotoResponse(response({ status: 'talvez' })),
+    ).toThrow(BadGatewayException);
+    for (const payload of [null, undefined, 'texto', 42, [], true]) {
+      expect(() => validateMealPhotoResponse(payload)).toThrow(
+        BadGatewayException,
+      );
+    }
+    expect(() => validateMealPhotoResponse({ status: 'ok' })).toThrow(
+      BadGatewayException,
+    );
+    expect(() =>
+      validateMealPhotoResponse(
+        response({ items: [{ ...item(), confidence: 'certeza' }] }),
+      ),
     ).toThrow(BadGatewayException);
   });
 
@@ -299,11 +364,15 @@ describe('validateMealPhotoResponse', () => {
     const secret = 'SEGREDO_NA_MENSAGEM';
 
     try {
-      validateMealPhotoResponse(response({ items: [item({ foodKey: secret })] }));
+      validateMealPhotoResponse(
+        response({ items: [item({ foodKey: secret })] }),
+      );
       throw new Error('deveria ter lancado');
     } catch (error) {
       expect(error).toBeInstanceOf(BadGatewayException);
-      expect(JSON.stringify((error as BadGatewayException).getResponse())).not.toContain(secret);
+      expect(
+        JSON.stringify((error as BadGatewayException).getResponse()),
+      ).not.toContain(secret);
     }
   });
 
@@ -350,12 +419,20 @@ describe('AnalyzeMealPhotoDto', () => {
   it('aceita entrada valida com e sem campos opcionais', async () => {
     expect(await validate(build())).toHaveLength(0);
     expect(
-      await validate(build({ mealType: 'almoco', localeHint: 'pt-BR', mimeType: 'image/webp' })),
+      await validate(
+        build({
+          mealType: 'almoco',
+          localeHint: 'pt-BR',
+          mimeType: 'image/webp',
+        }),
+      ),
     ).toHaveLength(0);
   });
 
   it('rejeita base64 invalido', async () => {
-    const errors = await validate(build({ imageBase64: 'isto nao e base64 !!!' }));
+    const errors = await validate(
+      build({ imageBase64: 'isto nao e base64 !!!' }),
+    );
 
     expect(errors.map((e) => e.property)).toContain('imageBase64');
   });
@@ -369,7 +446,12 @@ describe('AnalyzeMealPhotoDto', () => {
   });
 
   it('rejeita mime fora da lista', async () => {
-    for (const mimeType of ['image/gif', 'application/pdf', 'image/jpeg; charset=x', '']) {
+    for (const mimeType of [
+      'image/gif',
+      'application/pdf',
+      'image/jpeg; charset=x',
+      '',
+    ]) {
       const errors = await validate(build({ mimeType }));
       expect(errors.map((e) => e.property)).toContain('mimeType');
     }

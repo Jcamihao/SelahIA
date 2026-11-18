@@ -3,7 +3,12 @@ import { isUpperEnum, pickReasonToken, pickUpperEnum } from './safe-token';
 describe('safe-token', () => {
   describe('isUpperEnum', () => {
     it('aceita enums em maiusculas como os da Google e do Node', () => {
-      for (const value of ['STOP', 'MAX_TOKENS', 'RESOURCE_EXHAUSTED', 'ECONNRESET']) {
+      for (const value of [
+        'STOP',
+        'MAX_TOKENS',
+        'RESOURCE_EXHAUSTED',
+        'ECONNRESET',
+      ]) {
         expect(isUpperEnum(value)).toBe(true);
       }
     });
@@ -43,7 +48,14 @@ describe('safe-token', () => {
 
   describe('pickReasonToken', () => {
     it('aceita valores do Ollama em minusculas, com ou sem underscore', () => {
-      for (const value of ['stop', 'length', 'load', 'unload', 'Stop', 'max_tokens']) {
+      for (const value of [
+        'stop',
+        'length',
+        'load',
+        'unload',
+        'Stop',
+        'max_tokens',
+      ]) {
         expect(pickReasonToken(value)).toBe(value);
       }
     });

@@ -21,7 +21,12 @@ describe('ConsolidationAiService', () => {
   };
   const playbook = {
     weeks: [
-      { weekNumber: 1, goal: 'Acolher', actions: ['Ligar'], script: 'Oi, Ana!' },
+      {
+        weekNumber: 1,
+        goal: 'Acolher',
+        actions: ['Ligar'],
+        script: 'Oi, Ana!',
+      },
     ],
     personalizedInsights: 'Ana valoriza comunidade.',
   };
