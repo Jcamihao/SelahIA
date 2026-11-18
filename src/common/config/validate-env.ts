@@ -15,7 +15,6 @@ export const INT_ENV_SPECS: Record<string, { min: number; max: number }> = {
   GEMINI_STRUCTURED_THINKING_BUDGET: { min: 0, max: 100_000 },
   // Tentativas extras quando o Gemini devolve JSON invalido ou fora do schema.
   GEMINI_INVALID_JSON_RETRIES: { min: 0, max: 2 },
-  OLLAMA_TIMEOUT_MS: { min: 1, max: 3_600_000 },
   // 0 desliga o limite de concorrencia.
   LLM_MAX_CONCURRENCY: { min: 0, max: 1000 },
   LLM_MAX_QUEUE: { min: 0, max: 10_000 },
@@ -28,9 +27,6 @@ export const INT_ENV_SPECS: Record<string, { min: number; max: number }> = {
 const text = (value: string | undefined) => String(value ?? '').trim();
 
 const isProduction = (env: Env) => text(env.NODE_ENV) === 'production';
-
-const activeProvider = (env: Env) =>
-  text(env.LLM_PROVIDER).toLowerCase() === 'ollama' ? 'ollama' : 'gemini';
 
 // Le um inteiro do ambiente com os limites de INT_ENV_SPECS. Vazio ou ausente = padrao; invalido lanca.
 export const readEnvInt = (
@@ -86,7 +82,6 @@ export const validateEnvironment = (
     }
   };
   url('GEMINI_API_BASE_URL');
-  url('OLLAMA_BASE_URL');
 
   const dailyBudget = text(env.SELAH_DAILY_TOKEN_BUDGET);
   if (dailyBudget) {
@@ -109,15 +104,14 @@ export const validateEnvironment = (
   }
 
   const explicitProvider = text(env.LLM_PROVIDER).toLowerCase();
-  if (explicitProvider && !['gemini', 'ollama'].includes(explicitProvider)) {
+  if (explicitProvider && explicitProvider !== 'gemini') {
     errors.push(
-      `LLM_PROVIDER invalido: "${text(env.LLM_PROVIDER)}" (esperado gemini ou ollama).`,
+      `LLM_PROVIDER invalido: "${text(env.LLM_PROVIDER)}" (o unico provider e gemini).`,
     );
   }
 
-  if (activeProvider(env) === 'gemini' && !text(env.GEMINI_API_KEY)) {
-    const message =
-      'GEMINI_API_KEY nao configurada (provider gemini esta ativo).';
+  if (!text(env.GEMINI_API_KEY)) {
+    const message = 'GEMINI_API_KEY nao configurada.';
     if (production) {
       errors.push(message);
     } else {

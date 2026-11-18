@@ -7,12 +7,12 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.9.1-22c55e" alt="Version" />
   <img src="https://img.shields.io/badge/NestJS-11-e0234e?logo=nestjs&logoColor=white" alt="NestJS" />
-  <img src="https://img.shields.io/badge/Provider-Gemini%20%7C%20Ollama-0ea5e9" alt="Provider" />
+  <img src="https://img.shields.io/badge/Provider-Gemini-0ea5e9" alt="Provider" />
   <img src="https://img.shields.io/badge/Status-Em%20Opera%C3%A7%C3%A3o-0f766e" alt="Status" />
 </p>
 
 # 🤖 Selah IA
-Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM plugável — Gemini por padrão, ou Ollama — + geração de texto/JSON estruturado).
+Plataforma interna de IA da codeStage, com adapters por domínio sobre um core reutilizável (provider de LLM Gemini + geração de texto/JSON estruturado).
 
 ## ✨ Visão rápida
 
@@ -36,9 +36,8 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 - Adapters novos para outros SaaS internos reutilizam o mesmo provider, sem reescrever o core.
 
 ### 🔌 2) Provider atual
-- Selecionável via `LLM_PROVIDER` (`gemini` ou `ollama`), **padrão `gemini`**.
+- O único provider é o `gemini`. `LLM_PROVIDER` é opcional e, se definido, só aceita `gemini`.
 - `Gemini` (Google AI Studio, free tier disponível), modelo padrão `gemini-2.5-flash`.
-- `Ollama` (local/self-hosted, só com `LLM_PROVIDER=ollama`), modelo padrão `gemma4:e4b`. Suporte a chat com histórico de mensagens, tool calling e imagens inline.
 
 ### ⛪ 3) Adaptadores ativos
 - **PraiseApp:** Kids, Louvor, Consolidação e Saúde Ministerial.
@@ -50,7 +49,7 @@ Plataforma interna de IA da codeStage, com adapters por domínio sobre um core r
 ## 🧱 Stack
 
 - NestJS 11 (Express 5), Node >= 20.11
-- Gemini (provider padrão, hospedado) ou Ollama (provider local, via `LLM_PROVIDER=ollama`)
+- Gemini (provider hospedado)
 - Axios
 - Class Validator / Class Transformer
 - Jest
@@ -65,21 +64,18 @@ cp .env.example .env
 
 2. Configure obrigatoriamente:
 - `SELAH_INTERNAL_API_KEYS`
-- `GEMINI_API_KEY` (provider padrão) ou `OLLAMA_BASE_URL` (se `LLM_PROVIDER=ollama`)
+- `GEMINI_API_KEY`
 
 3. Variáveis principais:
 - `PORT=3010`
 - `SELAH_DEFAULT_LOCALE=pt-BR`
 - `SELAH_PUBLIC_VERSION=v1`
 - `SELAH_ALLOWED_SOURCE_APPS=PraiseAppBack,LumenBack,BalancoGorduraBack` (vale só para chaves legadas)
-- `LLM_PROVIDER=gemini` (padrão; ou `ollama`)
+- `LLM_PROVIDER=gemini` (opcional; é o único valor aceito)
 - `GEMINI_API_KEY=`
 - `GEMINI_MODEL=gemini-2.5-flash`
 - `GEMINI_TIMEOUT_MS=45000` (orçamento total por chamada, inclui retries)
 - `GEMINI_MAX_RETRIES=2` / `GEMINI_RETRY_BASE_MS=800` / `GEMINI_RETRY_MAX_DELAY_MS=8000` (retry com backoff exponencial + jitter só em 429, 5xx e erro de rede; respeita `Retry-After`)
-- `OLLAMA_BASE_URL=http://localhost:11434` (só com `LLM_PROVIDER=ollama`)
-- `OLLAMA_MODEL=gemma4:e4b`
-- `OLLAMA_TIMEOUT_MS=120000`
 
 ## 🚀 Como executar
 
@@ -120,7 +116,7 @@ O CI (`.github/workflows/ci.yml`) roda build, testes unitários e e2e em todo pu
 
 ## 🛡️ Operação
 
-- **Validação no boot:** o Selah recusa subir com configuração inválida (variável numérica malformada, URL inválida, `LLM_PROVIDER` desconhecido). Em produção também exige `GEMINI_API_KEY` (provider gemini) e uma chave de API interna.
+- **Validação no boot:** o Selah recusa subir com configuração inválida (variável numérica malformada, URL inválida, `LLM_PROVIDER` desconhecido). Em produção também exige `GEMINI_API_KEY` e uma chave de API interna.
 - **Shutdown gracioso:** `SIGTERM` espera as requisições em andamento terminarem; o compose de produção dá 50 s (`stop_grace_period`).
 - **Erros do consumidor** (corpo com `reason` e `retryAfterSeconds`, e header `Retry-After`):
   - `429` é limite do **Selah**: rate limit por minuto ou `DAILY_TOKEN_BUDGET_EXCEEDED` (teto diário de tokens do app).
@@ -174,7 +170,6 @@ src/
     logging/
   health/
   providers/
-    ollama/
     gemini/
 ```
 

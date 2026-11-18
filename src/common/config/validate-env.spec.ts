@@ -28,14 +28,9 @@ describe('validateEnvironment', () => {
     ]);
   });
 
-  it('nao exige GEMINI_API_KEY quando o provider ativo e ollama', () => {
-    const { errors, warnings } = validateEnvironment({
-      ...prod,
-      LLM_PROVIDER: 'ollama',
-      GEMINI_API_KEY: '',
-    });
-    expect(errors).toEqual([]);
-    expect(warnings).toEqual([]);
+  it('rejeita LLM_PROVIDER=ollama, que nao existe mais', () => {
+    const { errors } = validateEnvironment({ ...prod, LLM_PROVIDER: 'ollama' });
+    expect(errors).toEqual([expect.stringContaining('LLM_PROVIDER')]);
   });
 
   it('em producao exige alguma chave de API interna', () => {
@@ -60,7 +55,6 @@ describe('validateEnvironment', () => {
     ['GEMINI_MAX_RETRIES', '9'],
     ['GEMINI_RETRY_BASE_MS', '0'],
     ['GEMINI_STRUCTURED_THINKING_BUDGET', '1.5'],
-    ['OLLAMA_TIMEOUT_MS', 'x'],
   ])('rejeita %s=%s', (name, value) => {
     const { errors } = validateEnvironment({ ...prod, [name]: value });
     expect(errors).toEqual([expect.stringContaining(name)]);
@@ -111,10 +105,10 @@ describe('validateEnvironment', () => {
     ).toThrow('LLM_MAX_CONCURRENCY');
   });
 
-  it.each(['GEMINI_API_BASE_URL', 'OLLAMA_BASE_URL'])(
+  it.each(['GEMINI_API_BASE_URL'])(
     'rejeita %s que nao e URL http(s)',
     (name) => {
-      for (const value of ['localhost:11434', 'ftp://host', 'nao e url']) {
+      for (const value of ['localhost:8080', 'ftp://host', 'nao e url']) {
         const { errors } = validateEnvironment({ ...prod, [name]: value });
         expect(errors).toEqual([expect.stringContaining(name)]);
       }
