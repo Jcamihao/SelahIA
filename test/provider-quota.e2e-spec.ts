@@ -19,7 +19,7 @@ describe('cota do provider (e2e)', () => {
 
   beforeAll(async () => {
     chavesAnteriores = process.env.SELAH_APP_KEYS;
-    process.env.SELAH_APP_KEYS = `NottaPsiBack:${CHAVE}`;
+    process.env.SELAH_APP_KEYS = `PsicologiaBack:${CHAVE}`;
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -69,7 +69,7 @@ describe('cota do provider (e2e)', () => {
 
   it('o 429 do rate limit do Selah continua com seu Retry-After', async () => {
     const limitesAnteriores = process.env.SELAH_RATE_LIMITS;
-    process.env.SELAH_RATE_LIMITS = 'NottaPsiBack:1';
+    process.env.SELAH_RATE_LIMITS = 'PsicologiaBack:1';
     const limitedModule = await Test.createTestingModule({
       imports: [AppModule],
     })

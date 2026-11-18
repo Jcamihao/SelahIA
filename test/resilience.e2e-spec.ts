@@ -36,7 +36,7 @@ const buildApp = async (
 ) => {
   const previous: Record<string, string | undefined> = {};
   const all = {
-    SELAH_APP_KEYS: `NottaPsiBack:${APP_KEY},Prometheus:${PROM_KEY}`,
+    SELAH_APP_KEYS: `PsicologiaBack:${APP_KEY},Prometheus:${PROM_KEY}`,
     ...env,
   };
   for (const [name, value] of Object.entries(all)) {
@@ -136,15 +136,15 @@ describe('metricas (e2e)', () => {
     expect(response.headers['content-type']).toContain('text/plain');
     const text = response.text;
     expect(text).toContain(
-      `selah_http_requests_total{app="NottaPsiBack",method="POST",route="${ROTA}",status="200"} 1`,
+      `selah_http_requests_total{app="PsicologiaBack",method="POST",route="${ROTA}",status="200"} 1`,
     );
     expect(text).toContain('route="unmatched"');
     expect(text).not.toContain('/rota-que-nao-existe');
     expect(text).toContain(
-      'selah_llm_calls_total{app="NottaPsiBack",mode="structured",outcome="ok"} 1',
+      'selah_llm_calls_total{app="PsicologiaBack",mode="structured",outcome="ok"} 1',
     );
     expect(text).toContain(
-      'selah_llm_tokens_total{app="NottaPsiBack",type="total"} 150',
+      'selah_llm_tokens_total{app="PsicologiaBack",type="total"} 150',
     );
     expect(text).toContain('selah_llm_circuit_state 0');
     expect(text).not.toContain(APP_KEY);

@@ -1,7 +1,8 @@
 # HANDOFF — Selah IA
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
-> Última atualização: 2026-11-11, v2.9.1, branch `claude/charming-bohr-b00dys`.
+> Última atualização: 2026-11-18, v2.9.1.
+> **Branch de trabalho:** `fix/remove-notta-psi` (tipo fix, base `master`, ainda não enviada ao remoto). Remove todas as referências ao Notta.psi. Merge na `master` aguardando aprovação do dono.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é
@@ -56,7 +57,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 2. **Logs só com metadados** (tamanhos, tipos, latência, enums). Nunca conteúdo de nota, prompt, saída do modelo ou texto de erro do upstream. `no-personal-data-in-logs.spec.ts` guarda isso; adapter novo deve entrar nele.
 3. **Erro do upstream nunca vai para log nem corpo de erro** (v2.7.2). Só status, código de rede e enums (`safe-token.ts`).
 4. **Entrada do usuário é dado, não instrução**: delimitar no prompt (ver `<<<NOTA ... NOTA>>>` em psicologia) e remover o delimitador da própria entrada.
-5. **Psicologia só recebe dado sintético** enquanto a chave do Gemini for do plano gratuito. O Selah **não anonimiza**; isso é do Notta.psi.
+5. **Psicologia só recebe dado sintético** enquanto a chave do Gemini for do plano gratuito. O Selah **não anonimiza**; isso é do app consumidor.
 6. **Códigos de erro têm significado fixo** (v2.8.0/2.9.0): `429` = limite do **Selah** (rate limit por minuto ou teto diário de tokens); `503` + `reason` = provedor (`PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_BUSY`, `PROVIDER_UNAVAILABLE`); `502` = falha do provedor ou saída inválida. Todos com `Retry-After` quando aplicável. Não misture.
 7. **Só falha transitória do provedor abre o circuit breaker** (`ProviderUpstreamException.transient`): resposta inválida, 4xx e cota **não** abrem. Se criar um provider novo, marque `transient` direito.
 8. Mudou comportamento visível para consumidores? Bump de versão em `package.json`, nota em `docs/releases/vX.Y.Z.md` e linha no README.
@@ -75,7 +76,7 @@ Padrão de um adapter: DTO (class-validator) → prompt → `llmProvider.generat
 | **Nest 12 não migrado** | O Nest 12 é **ESM-only** (`"type": "module"`, Node >= 20): exigiria migrar módulos, `tsconfig` e Jest. Ficamos no 11.2.9 (CommonJS), que está na linha `legacy` do npm; **não verifiquei até quando recebe correções**. Reavaliar antes de o 11 sair de suporte. |
 | **Estado em memória, por instância** | Rate limit, limite de concorrência, circuit breaker e teto diário de tokens zeram a cada restart e valem por réplica. Redis só se houver mais de uma réplica. |
 | **Psicologia** | Decisão pendente: rascunho **fiel** à nota ou **reescrito** (hoje sai do tamanho da nota). Não verificado: anamnese colada sem quebras de linha, autolesão em PSICANALISE, notas perto de 8.000 caracteres. |
-| **Consumidores e os novos códigos** | Não foi verificado como Lumen, PraiseApp, Agilis, BalancoGordura e Notta.psi tratam 503 (`PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_BUSY`, `PROVIDER_UNAVAILABLE`) e 429 com corpo (`DAILY_TOKEN_BUDGET_EXCEEDED`). Antes a cota era 502. |
+| **Consumidores e os novos códigos** | Não foi verificado como Lumen, PraiseApp, Agilis e BalancoGordura tratam 503 (`PROVIDER_QUOTA_EXCEEDED`, `PROVIDER_BUSY`, `PROVIDER_UNAVAILABLE`) e 429 com corpo (`DAILY_TOKEN_BUDGET_EXCEEDED`). Antes a cota era 502. |
 | **Tokens da tentativa descartada** | Na nova tentativa por JSON inválido só os tokens da última resposta entram na métrica e no teto diário; o gasto real pode ser maior. O Ollama não informa tokens (teto e métrica de tokens só valem para o Gemini). |
 | **`trust proxy` e nginx não testados em produção** | O padrão `loopback,uniquelocal` assume que o nginx chega ao container por IP privado (bridge do Docker). Conferir no servidor que o `ip=` do log é o do cliente. Se aparecer o IP do gateway do Docker, ajustar `SELAH_TRUST_PROXY`. O bloco `location = /metrics` do nginx também não foi executado (`nginx -t` não rodou). |
 | **`/metrics` sem scraper configurado** | A rota existe e exige chave; falta criar a chave `Prometheus:<chave>` em `SELAH_APP_KEYS` e configurar o scrape (e alertas, ex.: `selah_llm_circuit_state == 2`). Nada disso foi feito. |
