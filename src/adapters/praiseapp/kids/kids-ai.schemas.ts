@@ -1,27 +1,7 @@
-const readOptionalString = (
-  payload: Record<string, unknown>,
-  key: string,
-  maxLength = 1200,
-) => {
-  const value = payload[key];
-  const normalized = String(value || '').trim();
-  if (!normalized) {
-    return null;
-  }
-  return normalized.slice(0, maxLength);
-};
-
-const readRequiredString = (
-  payload: Record<string, unknown>,
-  key: string,
-  maxLength = 1200,
-) => {
-  const value = readOptionalString(payload, key, maxLength);
-  if (!value) {
-    throw new Error(`Campo obrigatório ausente: ${key}`);
-  }
-  return value;
-};
+import {
+  readRequiredString,
+  readStringArray,
+} from '../../../common/validation/read-fields';
 
 const readOptionalInt = (
   payload: Record<string, unknown>,
@@ -33,24 +13,6 @@ const readOptionalInt = (
     return fallback;
   }
   return Math.max(0, Math.round(value));
-};
-
-const readStringArray = (
-  payload: Record<string, unknown>,
-  key: string,
-  maxItems = 8,
-  maxLength = 240,
-) => {
-  const value = payload[key];
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-    .slice(0, maxItems)
-    .map((item) => item.slice(0, maxLength));
 };
 
 export const PRAISEAPP_KIDS_LESSON_PLAN_SCHEMA = {

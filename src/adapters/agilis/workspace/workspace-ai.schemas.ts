@@ -1,3 +1,8 @@
+import {
+  readRequiredString,
+  readStringArray,
+} from '../../../common/validation/read-fields';
+
 export type AgilisSummary = { summary: string };
 
 export type AgilisActionPlan = {
@@ -178,39 +183,8 @@ const asObject = (payload: unknown, label: string) => {
   return payload as Record<string, unknown>;
 };
 
-const readString = (
-  payload: Record<string, unknown>,
-  key: string,
-  maxLength: number,
-) => {
-  const value = String(payload[key] ?? '').trim();
-  if (!value) {
-    throw new Error(`Campo obrigatório ausente: ${key}`);
-  }
-  return value.slice(0, maxLength);
-};
-
-const readList = (
-  payload: Record<string, unknown>,
-  key: string,
-  maxItems: number,
-  maxLength: number,
-  minItems = 0,
-) => {
-  const value = payload[key];
-  const items = (Array.isArray(value) ? value : [])
-    .map((item) => String(item ?? '').trim())
-    .filter(Boolean)
-    .slice(0, maxItems)
-    .map((item) => item.slice(0, maxLength));
-  if (items.length < minItems) {
-    throw new Error(`Campo obrigatório ausente: ${key}`);
-  }
-  return items;
-};
-
 export const validateAgilisSummary = (payload: unknown): AgilisSummary => ({
-  summary: readString(asObject(payload, 'resumo'), 'summary', 1500),
+  summary: readRequiredString(asObject(payload, 'resumo'), 'summary', 1500),
 });
 
 export const validateAgilisActionPlan = (
@@ -218,10 +192,10 @@ export const validateAgilisActionPlan = (
 ): AgilisActionPlan => {
   const p = asObject(payload, 'plano de ação');
   return {
-    immediatePriorities: readList(p, 'immediatePriorities', 6, 300, 1),
-    nextSteps: readList(p, 'nextSteps', 6, 300),
-    risks: readList(p, 'risks', 5, 300),
-    recommendations: readList(p, 'recommendations', 5, 300),
+    immediatePriorities: readStringArray(p, 'immediatePriorities', 6, 300, 1),
+    nextSteps: readStringArray(p, 'nextSteps', 6, 300),
+    risks: readStringArray(p, 'risks', 5, 300),
+    recommendations: readStringArray(p, 'recommendations', 5, 300),
   };
 };
 
@@ -231,7 +205,7 @@ export const validateAgilisBottlenecks = (
   const p = asObject(payload, 'gargalos');
   const raw = Array.isArray(p.bottlenecks) ? p.bottlenecks : [];
   return {
-    overview: readString(p, 'overview', 500),
+    overview: readRequiredString(p, 'overview', 500),
     bottlenecks: raw
       .filter(
         (item): item is Record<string, unknown> =>
@@ -239,9 +213,9 @@ export const validateAgilisBottlenecks = (
       )
       .slice(0, 3)
       .map((item) => ({
-        title: readString(item, 'title', 200),
-        cause: readString(item, 'cause', 500),
-        correctiveAction: readString(item, 'correctiveAction', 500),
+        title: readRequiredString(item, 'title', 200),
+        cause: readRequiredString(item, 'cause', 500),
+        correctiveAction: readRequiredString(item, 'correctiveAction', 500),
       })),
   };
 };
@@ -259,8 +233,8 @@ export const validateAgilisAssignee = (
       )
       .slice(0, 2)
       .map((item) => ({
-        name: readString(item, 'name', 120),
-        reason: readString(item, 'reason', 500),
+        name: readRequiredString(item, 'name', 120),
+        reason: readRequiredString(item, 'reason', 500),
       })),
   };
 };
@@ -270,10 +244,10 @@ export const validateAgilisStrategicBrief = (
 ): AgilisStrategicBrief => {
   const p = asObject(payload, 'brief estratégico');
   return {
-    summary: readString(p, 'summary', 1200),
-    risks: readList(p, 'risks', 3, 400, 1),
-    opportunities: readList(p, 'opportunities', 3, 400),
-    recommendations: readList(p, 'recommendations', 4, 400, 1),
+    summary: readRequiredString(p, 'summary', 1200),
+    risks: readStringArray(p, 'risks', 3, 400, 1),
+    opportunities: readStringArray(p, 'opportunities', 3, 400),
+    recommendations: readStringArray(p, 'recommendations', 4, 400, 1),
   };
 };
 
@@ -283,7 +257,7 @@ export const validateAgilisRedistribution = (
   const p = asObject(payload, 'redistribuição de carga');
   const raw = Array.isArray(p.moves) ? p.moves : [];
   return {
-    overview: readString(p, 'overview', 600),
+    overview: readRequiredString(p, 'overview', 600),
     moves: raw
       .filter(
         (item): item is Record<string, unknown> =>
@@ -291,10 +265,10 @@ export const validateAgilisRedistribution = (
       )
       .slice(0, 5)
       .map((item) => ({
-        from: readString(item, 'from', 120),
-        to: readString(item, 'to', 120),
+        from: readRequiredString(item, 'from', 120),
+        to: readRequiredString(item, 'to', 120),
         tasksToMove: Math.max(1, Math.round(Number(item.tasksToMove) || 1)),
-        reason: readString(item, 'reason', 400),
+        reason: readRequiredString(item, 'reason', 400),
       })),
   };
 };
