@@ -2,7 +2,7 @@
 
 > **Para a próxima IA (ou pessoa) que abrir este repositório: leia este arquivo primeiro.**
 > Última atualização: 2026-11-18, v2.9.1.
-> **Branch de trabalho:** `master`, sem feature em andamento. A `fix/remove-notta-psi` foi mergeada (`64445da`, aprovada pelo dono) e continua no remoto.
+> **Branch de trabalho:** `fix/gitignore-graphify` (tipo fix, base `master`, no remoto). Ignora `graphify-out/` e `.claude/` (grafo gerado e hook com caminho da máquina). Merge na `master` aguardando aprovação do dono.
 > **Regra do dono do projeto:** toda sessão de trabalho termina atualizando este arquivo (seção "Estado atual" e "Histórico"). Ver `AGENTS.md`.
 
 ## 1. O que é

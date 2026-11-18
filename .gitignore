@@ -3,3 +3,5 @@
 /.env
 /.env.production
 /coverage
+/graphify-out
+/.claude
